@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "msw": "^2.12.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -27,6 +28,11 @@
     "vite": "npm:rolldown-vite@^7.2.5"
   },
   "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "npm:rolldown-vite@^7.2.5"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
