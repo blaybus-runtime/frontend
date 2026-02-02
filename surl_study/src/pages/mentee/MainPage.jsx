@@ -1,9 +1,9 @@
-import Header from "../components/Header";
-import TaskCard from "../components/TaskCard";
-import WeeklyCalendar from "../components/WeeklyCalendar";
-import ProgressCard from "../components/ProgressCard";
-import ColumnCard from "../components/ColumnCard";
-import FloatingButton from "../components/FloatingButton";
+import Header from "../../components/common/Header";
+import TaskCard from "../../components/mentee/TaskCard";
+import WeeklyCalendar from "../../components/mentee/WeeklyCalendar";
+import ProgressCard from "../../components/mentee/ProgressCard";
+import ColumnCard from "../../components/mentee/ColumnCard";
+import FloatingButton from "../../components/common/FloatingButton";
 
 // 더미 데이터
 const tasks = [

@@ -16,7 +16,7 @@ import viteLogo from '/vite.svg'
 // export default App
 
 
-import MainPage from "./pages/MainPage";
+import MainPage from "./pages/mentee/MainPage";
 
 export default function App() {
   return <MainPage />;

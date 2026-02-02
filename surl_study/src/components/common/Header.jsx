@@ -5,7 +5,7 @@ export default function Header() {
         <div className="text-xl font-bold">설스터디</div>
 
         <div className="flex items-center gap-5">
-          <button className="flex items-center gap-2 rounded-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">
+          <button className="flex items-center gap-2 rounded-full px-3 py-2 text-sm bg-white text-black hover:bg-gray-100">
             <span className="text-lg">🔔</span>
             알림
           </button>
