@@ -12,17 +12,19 @@ function Ring({ label, active }) {
 export default function ProgressCard() {
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-5">
         <div className="flex items-end gap-3">
           <div className="text-3xl">🔥</div>
           <div className="text-2xl font-bold">97%</div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex-col gap-3">
           <div className="mr-2 text-sm font-semibold text-gray-700">진척도</div>
-          <Ring label="국어" active />
-          <Ring label="영어" active={false} />
-          <Ring label="수학" active={false} />
+          <div className="flex items-center gap-6">
+            <Ring label="국어" active />
+            <Ring label="영어" active={false} />
+            <Ring label="수학" active={false} />
+          </div>
         </div>
       </div>
     </div>
