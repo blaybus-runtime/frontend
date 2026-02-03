@@ -34,7 +34,7 @@ export default function MentorMainPage() {
 
       <main className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8">
         {/* 상단 타이틀 영역 */}
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span className="inline-flex rounded-md bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700">

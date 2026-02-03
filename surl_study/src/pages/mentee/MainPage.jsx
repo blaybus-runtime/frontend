@@ -38,11 +38,11 @@ export default function MainPage() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">오늘 할 일</h2>
 
-              <button className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-100">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white">
-                  +
-                </span>
-                할일 추가
+              <button className="inline-flex items-center gap-2 rounded-full !bg-[#6D87ED] px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-100">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 7V15M7 11H15M21 11C21 16.5228 16.5228 21 11 21C5.47715 21 1 16.5228 1 11C1 5.47715 5.47715 1 11 1C16.5228 1 21 5.47715 21 11Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span className="text-white font-bold">할일 추가</span>
               </button>
             </div>
 

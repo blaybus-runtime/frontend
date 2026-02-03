@@ -4,8 +4,9 @@ export default function ColumnCard({ items }) {
       <ul className="divide-y divide-gray-100">
         {items.map((text, idx) => (
           <li key={idx} className="flex items-center gap-2 py-3 text-sm text-gray-800">
-            <span className="text-base">🌿</span>
-            <span className="line-clamp-1">{text}</span>
+            <a>
+              <span className="line-clamp-1">{text}</span>
+            </a>
           </li>
         ))}
       </ul>
