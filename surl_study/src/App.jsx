@@ -16,10 +16,21 @@ import viteLogo from '/vite.svg'
 // export default App
 
 
-import MainPage from "./pages/mentee/MainPage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import MenteeMain from "./pages/mentee/MainPage";
+import MentorMain from "./pages/mentor/MainPage";
 
 export default function App() {
-  return <MainPage />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* 주소 뒤에 /mentee를 붙이면 이동 */}
+        <Route path="/mentee" element={<MenteeMain />} />
+        {/* 주소 뒤에 /mentor를 붙이면 이동 */}
+        <Route path="/mentor" element={<MentorMain />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 

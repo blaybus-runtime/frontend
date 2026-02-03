@@ -1,5 +1,5 @@
 import Header from "../../components/common/Header";
-import MentorMenteeCard from "../../components/mentor/MentorMenteeCard";
+import MentorMenteeCard from "../../components/mentor/MenteeCard";
 import SubmittedTaskCard from "../../components/mentor/SubmittedTaskCard";
 import FeedbackCard from "../../components/mentor/FeedbackCard";
 
