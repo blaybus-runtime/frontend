@@ -36,7 +36,7 @@ export default function MainPage() {
           {/* LEFT */}
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">오늘 할 일</h2>
+              <h2 className="text-lg font-semibold !text-[#222222]">오늘 할 일</h2>
 
               <button className="inline-flex items-center gap-2 rounded-full !bg-[#6D87ED] px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-100">
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -57,9 +57,13 @@ export default function MainPage() {
           <section className="space-y-6">
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">주간 캘린더</h2>
+                <h2 className="text-lg font-semibold !text-[#222222]">주간 캘린더</h2>
                 <button className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
-                  <span className="text-xl leading-none">›</span>
+                  <span className="text-xl leading-none">
+                    <svg width="11" height="16" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1.00012 1.00009L8.93924 6.51C9.47641 6.88281 9.51716 7.66236 9.02179 8.08914L1.00012 15.0001" stroke="#666666" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
                 </button>
               </div>
 
@@ -72,7 +76,7 @@ export default function MainPage() {
             </div>
 
             <div>
-              <h2 className="mb-3 text-lg font-semibold">서울대쌤 칼럼</h2>
+              <h2 className="mb-3 text-lg font-semibold !text-[#222222]">서울대쌤 칼럼</h2>
               <ColumnCard items={columns} />
             </div>
           </section>
