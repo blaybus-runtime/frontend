@@ -1,9 +1,12 @@
+import { useState, useEffect } from "react";
 import Header from "../../components/common/Header";
 import TaskCard from "../../components/mentee/TaskCard";
 import WeeklyCalendar from "../../components/mentee/WeeklyCalendar";
 import ProgressCard from "../../components/mentee/ProgressCard";
 import ColumnCard from "../../components/mentee/ColumnCard";
 import FloatingButton from "../../components/common/FloatingButton";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 // 더미 데이터
 const tasks = [
@@ -17,16 +20,31 @@ const tasks = [
   { id: 8, tag: "수학", tagColor: "bg-emerald-100 text-emerald-700", title: "수학 오답노트", status: "피드백 대기", done: false },
 ];
 
-// 더미 데이터
-const columns = [
+// 더미 데이터 (API 실패 시 폴백)
+const fallbackColumns = [
   "짧은 시간이 힘, 자투리 10분이 성적을 바꾼다",
   "공부가 하기 싫은 날, 그래도 포기하지 않는 방법",
   "지금 당장 생산적인 공부를 하는 법(2)",
   "지금 당장 생산적인 공부를 하는 법(1)",
-  "수능 국어 공부법: ‘읽어야할 것’은 진짜입니다",
+  "수능 국어 공부법: '읽어야할 것'은 진짜입니다",
 ];
 
 export default function MainPage() {
+  const [columns, setColumns] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/v1/columns/recent?limit=5`)
+      .then((res) => res.json())
+      .then((json) => {
+        // API 응답: { status: 200, message: "Success", data: [...] }
+        const titles = json.data.map((col) => col.title);
+        setColumns(titles);
+      })
+      .catch((err) => {
+        console.error("칼럼 API 호출 실패, 더미 데이터 사용:", err);
+        setColumns(fallbackColumns);
+      });
+  }, []);
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900">
       <Header />
