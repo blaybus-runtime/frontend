@@ -8,16 +8,20 @@ import FloatingButton from "../../components/common/FloatingButton";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-// 더미 데이터
-const tasks = [
+// 과목별 태그 색상 매핑
+const SUBJECT_COLORS = {
+  국어: "bg-amber-100 text-amber-700",
+  영어: "bg-rose-100 text-rose-700",
+  수학: "bg-emerald-100 text-emerald-700",
+  과학: "bg-sky-100 text-sky-700",
+  사회: "bg-purple-100 text-purple-700",
+};
+const DEFAULT_TAG_COLOR = "bg-gray-100 text-gray-700";
+
+// 더미 데이터 (API 실패 시 폴백)
+const fallbackTasks = [
   { id: 1, tag: "국어", tagColor: "bg-amber-100 text-amber-700", title: "강지연 국어", status: "피드백 완료", done: true },
-  { id: 2, tag: "국어", tagColor: "bg-amber-100 text-amber-700", title: "독서2 지문", status: "피드백 완료", done: true },
-  { id: 3, tag: "기타", tagColor: "bg-gray-100 text-gray-700", title: "플래너 업로드", status: "피드백 완료", done: true },
-  { id: 4, tag: "영어", tagColor: "bg-rose-100 text-rose-700", title: "단어 암기", status: "피드백 대기", done: true },
-  { id: 5, tag: "영어", tagColor: "bg-rose-100 text-rose-700", title: "단어 시험", status: "피드백 대기", done: false },
-  { id: 6, tag: "수학", tagColor: "bg-emerald-100 text-emerald-700", title: "수학 오답노트", status: "피드백 대기", done: false },
-  { id: 7, tag: "수학", tagColor: "bg-emerald-100 text-emerald-700", title: "수학 오답노트", status: "피드백 대기", done: false },
-  { id: 8, tag: "수학", tagColor: "bg-emerald-100 text-emerald-700", title: "수학 오답노트", status: "피드백 대기", done: false },
+  { id: 2, tag: "영어", tagColor: "bg-rose-100 text-rose-700", title: "단어 암기", status: "피드백 대기", done: false },
 ];
 
 // 더미 데이터 (API 실패 시 폴백)
@@ -45,9 +49,36 @@ function getWeekRange() {
 
 export default function MainPage() {
   const [columns, setColumns] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [totalRate, setTotalRate] = useState(0);
   const [subjectStats, setSubjectStats] = useState([]);
   const [dailyStats, setDailyStats] = useState([]);
+
+  // 오늘 할 일 API
+  useEffect(() => {
+    const menteeId = 3; // TODO: 로그인한 멘티 ID로 교체
+    const today = new Date().toISOString().split("T")[0]; // yyyy-MM-dd
+
+    fetch(`${API_BASE}/api/v1/study/daily?menteeId=${menteeId}&date=${today}`)
+      .then((res) => res.json())
+      .then((json) => {
+        // 응답: { menteeId, date, todos: [{ id, content, subject, isCompleted, priority, taskType }] }
+        const todos = json.todos ?? [];
+        const mapped = todos.map((t) => ({
+          id: t.id,
+          tag: t.subject,
+          tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
+          title: t.content,
+          status: t.isCompleted ? "완료" : "진행 중",
+          done: t.isCompleted,
+        }));
+        setTasks(mapped);
+      })
+      .catch((err) => {
+        console.error("오늘 할 일 API 호출 실패, 더미 데이터 사용:", err);
+        setTasks(fallbackTasks);
+      });
+  }, []);
 
   // 칼럼 API
   useEffect(() => {
