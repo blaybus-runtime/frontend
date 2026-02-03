@@ -29,20 +29,60 @@ const fallbackColumns = [
   "수능 국어 공부법: '읽어야할 것'은 진짜입니다",
 ];
 
+// 이번 주 월~일 날짜를 yyyy-MM-dd 형식으로 구하는 헬퍼
+function getWeekRange() {
+  const today = new Date();
+  const day = today.getDay(); // 0(일)~6(토)
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const fmt = (d) => d.toISOString().split("T")[0];
+  return { startDate: fmt(monday), endDate: fmt(sunday) };
+}
+
 export default function MainPage() {
   const [columns, setColumns] = useState([]);
+  const [totalRate, setTotalRate] = useState(0);
+  const [subjectStats, setSubjectStats] = useState([]);
+  const [dailyStats, setDailyStats] = useState([]);
 
+  // 칼럼 API
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/columns/recent?limit=5`)
       .then((res) => res.json())
       .then((json) => {
-        // API 응답: { status: 200, message: "Success", data: [...] }
         const titles = json.data.map((col) => col.title);
         setColumns(titles);
       })
       .catch((err) => {
         console.error("칼럼 API 호출 실패, 더미 데이터 사용:", err);
         setColumns(fallbackColumns);
+      });
+  }, []);
+
+  // 학습 진척도 API
+  useEffect(() => {
+    const { startDate, endDate } = getWeekRange();
+    const menteeId = 3; // TODO: 로그인한 멘티 ID로 교체
+
+    fetch(`${API_BASE}/api/v1/study/progress?menteeId=${menteeId}&startDate=${startDate}&endDate=${endDate}`)
+      .then((res) => res.json())
+      .then((json) => {
+        // API 응답: { status, message, data: { menteeId, period, summary, dailyStats } }
+        const data = json.data;
+        if (data?.summary) {
+          setTotalRate(data.summary.totalProgressRate ?? 0);
+          setSubjectStats(data.summary.subjectStats ?? []);
+        }
+        if (data?.dailyStats) {
+          setDailyStats(data.dailyStats);
+        }
+      })
+      .catch((err) => {
+        console.error("진척도 API 호출 실패:", err);
       });
   }, []);
   return (
@@ -86,9 +126,9 @@ export default function MainPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <WeeklyCalendar />
+                <WeeklyCalendar dailyStats={dailyStats} />
                 <div className="mt-4">
-                  <ProgressCard />
+                  <ProgressCard totalRate={totalRate} subjectStats={subjectStats} />
                 </div>
               </div>
             </div>
