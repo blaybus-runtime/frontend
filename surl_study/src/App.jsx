@@ -22,6 +22,7 @@ import MenteeMain from "./pages/mentee/MainPage";
 import MentorMain from "./pages/mentor/MainPage";
 import TaskDetailPage from "./pages/mentee/TaskDetailPage";
 import FeedbackDetailPage from "./pages/mentor/FeedbackDetailPage";
+import CalendarPage from './pages/calender/CalendarPage';
 
 export default function App() {
   return (
@@ -33,6 +34,8 @@ export default function App() {
         <Route path="/mentee" element={<MenteeMain />} />
         {/* 할일 상세 페이지 */}
         <Route path="/mentee/task/:taskId" element={<TaskDetailPage />} />
+        {/* 캘린더 페이지 */}
+        <Route path="/mentee/calender" element={<CalendarPage />} />
         {/* 주소 뒤에 /mentor를 붙이면 이동 */}
         <Route path="/mentor" element={<MentorMain />} />
         {/* 멘토 피드백 상세 페이지 */}
