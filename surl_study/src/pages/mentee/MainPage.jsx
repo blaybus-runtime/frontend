@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Header from "../../components/common/Header";
 import TaskCard from "../../components/mentee/TaskCard";
 import WeeklyCalendar from "../../components/mentee/WeeklyCalendar";
-import ProgressCard from "../../components/mentee/ProgressCard";
+import StudyTimeChart from "../../components/mentee/StudyTimeChart";
 import ColumnCard from "../../components/mentee/ColumnCard";
 import FloatingButton from "../../components/common/FloatingButton";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
@@ -163,11 +163,14 @@ export default function MainPage() {
                 </button>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                 <WeeklyCalendar dailyStats={dailyStats} />
-                <div className="mt-4">
-                  <ProgressCard totalRate={totalRate} subjectStats={subjectStats} />
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <StudyTimeChart />
                 </div>
+                <button className="mt-4 w-full rounded-lg !bg-[#6D87ED] py-3 text-sm font-semibold text-white hover:!bg-[#5A74D6] transition-colors">
+                  공부 시간 기록
+                </button>
               </div>
             </div>
 
