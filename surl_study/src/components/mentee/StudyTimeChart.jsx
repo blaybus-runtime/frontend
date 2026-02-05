@@ -131,7 +131,7 @@ export default function StudyTimeChart({
               data={pieData}
               cx="50%"
               cy="50%"
-              innerRadius="8%"
+              innerRadius="1%"
               outerRadius="72%"
               startAngle={90}
               endAngle={-270}
