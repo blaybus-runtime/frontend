@@ -21,6 +21,7 @@ import HomePage from "./pages/home/HomePage";
 import MenteeMain from "./pages/mentee/MainPage";
 import MentorMain from "./pages/mentor/MainPage";
 import TaskDetailPage from "./pages/mentee/TaskDetailPage";
+import FeedbackDetailPage from "./pages/mentor/FeedbackDetailPage";
 
 export default function App() {
   return (
@@ -34,6 +35,8 @@ export default function App() {
         <Route path="/mentee/task/:taskId" element={<TaskDetailPage />} />
         {/* 주소 뒤에 /mentor를 붙이면 이동 */}
         <Route path="/mentor" element={<MentorMain />} />
+        {/* 멘토 피드백 상세 페이지 */}
+        <Route path="/mentor/feedback/:feedbackId" element={<FeedbackDetailPage />} />
       </Routes>
     </BrowserRouter>
   );
