@@ -1,134 +1,112 @@
+import { useState } from "react";
 import Header from "../../components/common/Header";
 import MentorMenteeCard from "../../components/mentor/MenteeCard";
-import SubmittedTaskCard from "../../components/mentor/SubmittedTaskCard";
-import FeedbackCard from "../../components/mentor/FeedbackCard";
+import IncompleteFeedbackCard from "../../components/mentor/IncompleteFeedbackCard";
+import WeeklyCalendar from "../../components/mentor/WeeklyCalendar";
+import AddMenteeModal from "../../components/mentor/AddMenteeModal";
 
 const mentees = [
-  { id: 1, name: "설이 멘티", status: "과제 완료", done: true },
-  { id: 2, name: "채영 멘티", status: "과제 완료", done: true },
-  { id: 3, name: "유나 멘티", status: "과제 미제출", done: false },
-  { id: 4, name: "동수 멘티", status: "과제 미제출", done: false },
-  { id: 5, name: "동하 멘티", status: "과제 미제출", done: false },
-  { id: 6, name: "지원 멘티", status: "과제 미제출", done: false },
-  { id: 7, name: "수빈 멘티", status: "과제 미제출", done: false },
-  { id: 8, name: "정은 멘티", status: "과제 미제출", done: false },
-  { id: 9, name: "재욱 멘티", status: "과제 미제출", done: false },
-  { id: 10, name: "상현 멘티", status: "과제 미제출", done: false },
+  { id: 1, name: "설이 멘티" },
+  { id: 2, name: "채영 멘티" },
+  { id: 3, name: "유나 멘티" },
+  { id: 4, name: "동수 멘티" },
+  { id: 5, name: "동하 멘티" },
+  { id: 6, name: "지원 멘티" },
+  { id: 7, name: "수빈 멘티" },
+  { id: 8, name: "정은 멘티" },
+  { id: 9, name: "재욱 멘티" },
+  { id: 10, name: "상현 멘티" },
 ];
 
-const submittedTasks = [
-  { id: 1, mentee: "설이 멘티", title: "단어암기", status: "과제 완료", done: true },
-  { id: 2, mentee: "채영 멘티", title: "단어암기", status: "과제 완료", done: true },
-  { id: 3, mentee: "유나 멘티", title: "영어 강의", status: "과제 미제출", done: false },
-  { id: 1, mentee: "설이 멘티", title: "단어암기", status: "과제 완료", done: true },
-  { id: 2, mentee: "채영 멘티", title: "단어암기", status: "과제 완료", done: true },
-  { id: 3, mentee: "유나 멘티", title: "영어 강의", status: "과제 미제출", done: false },
+const incompleteFeedbacks = [
+  { id: 1, mentee: "설이 멘티", subject: "영어", subjectColor: "rose", title: "단어암기", timeAgo: "12시간 전" },
+  { id: 2, mentee: "채영 멘티", subject: "국어", subjectColor: "emerald", title: "강지연 국어5P 듣기", timeAgo: "12시간 전" },
+  { id: 3, mentee: "채영 멘티", subject: "수학", subjectColor: "blue", title: "수학 오답노트", timeAgo: "11시간 전" },
+  { id: 4, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
+  { id: 5, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
+  { id: 6, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
+  { id: 7, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
 ];
 
-const feedbacks = [
-  { id: 1, mentee: "설이 멘티", title: "영어 강의", status: "피드백 쓰기", done: false },
-  { id: 2, mentee: "채영 멘티", title: "영어 강의", status: "피드백 완료", done: true },
-  { id: 1, mentee: "설이 멘티", title: "영어 강의", status: "피드백 쓰기", done: false },
-  { id: 2, mentee: "채영 멘티", title: "영어 강의", status: "피드백 완료", done: true },
-  { id: 1, mentee: "설이 멘티", title: "영어 강의", status: "피드백 쓰기", done: false },
-  { id: 2, mentee: "채영 멘티", title: "영어 강의", status: "피드백 완료", done: true },
-];
+// 멘티별 미완료 피드백 카운트 계산
+function getMenteeFeedbackCount(menteeName) {
+  return incompleteFeedbacks.filter((f) => f.mentee === menteeName).length;
+}
 
 export default function MentorMainPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSaveMentee = (formData) => {
+    console.log("멘티 저장:", formData);
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Header userName="민석" />
+      <Header userName="김자연" />
 
       <main className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8">
-        {/* 상단 타이틀 영역 */}
         <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex rounded-md bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700">
-                영어
-              </span>
-              <span className="text-2xl font-bold">강민석 영어 멘토</span>
-            </div>
-
-            <button className="inline-flex items-center gap-2 rounded-full !bg-[#6D87ED] px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-100">
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11 7V15M7 11H15M21 11C21 16.5228 16.5228 21 11 21C5.47715 21 1 16.5228 1 11C1 5.47715 5.47715 1 11 1C16.5228 1 21 5.47715 21 11Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span className="text-white font-bold">할일 추가</span>
-              </button>
-          </div>
-
           {/* 본문 2열 레이아웃 */}
-          <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
             {/* LEFT: 멘티 카드 그리드 */}
             <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">멘티 10명</h2>
-
-                <button className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-semibold text-[#6D87ED] hover:bg-indigo-100">
-                    <svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11 7V15M7 11H15M21 11C21 16.5228 16.5228 21 11 21C5.47715 21 1 16.5228 1 11C1 5.47715 5.47715 1 11 1C16.5228 1 21 5.47715 21 11Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  멘티 추가
-                </button>
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">멘티 {mentees.length}명</h2>
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {mentees.map((m) => (
-                  <MentorMenteeCard key={m.id} mentee={m} />
+                  <MentorMenteeCard
+                    key={m.id}
+                    mentee={m}
+                    feedbackCount={getMenteeFeedbackCount(m.name)}
+                  />
                 ))}
+
+                {/* 멘티 추가 카드 */}
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer"
+                  style={{ backgroundColor: "white" }}
+                >
+                  <div className="h-16 w-16 rounded-full bg-[#E8EAF0] flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 5V19M5 12H19" stroke="#8B92A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <span className="mt-1 text-sm font-semibold text-[#8B92A0]">멘티 추가</span>
+                </button>
               </div>
             </section>
 
-            {/* RIGHT: 제출 과제 / 피드백 */}
-            <section className="space-y-6">
-              {/* 제출 과제 */}
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">제출 과제</h2>
-                  <button className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
-                    <span className="text-xl leading-none">
-                      <svg width="11" height="16" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1.00012 1L8.93924 6.50991C9.47641 6.88272 9.51716 7.66227 9.02179 8.08905L1.00012 15" stroke="#666666" stroke-width="2" stroke-linecap="round"/>
-                      </svg>
-                    </span>
-                  </button>
-                </div>
-
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-h-70 overflow-y-auto custom-scrollbar">
-                  <div className="space-y-3">
-                    {submittedTasks.map((t) => (
-                      <SubmittedTaskCard key={t.id} item={t} />
-                    ))}
-                  </div>
-                </div>
+            {/* RIGHT: 미완료 피드백 */}
+            <section>
+              <div className="mb-3">
+                <h2 className="text-lg font-semibold">미완료 피드백</h2>
               </div>
 
-              {/* 피드백 */}
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">피드백</h2>
-                  <button className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
-                    <span className="text-xl leading-none">
-                      <svg width="11" height="16" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1.00012 1L8.93924 6.50991C9.47641 6.88272 9.51716 7.66227 9.02179 8.08905L1.00012 15" stroke="#666666" stroke-width="2" stroke-linecap="round"/>
-                      </svg>
-                    </span>
-                  </button>
-                </div>
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                {/* 주간 캘린더 */}
+                <WeeklyCalendar />
 
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-h-70 overflow-y-auto custom-scrollbar">
-                  <div className="space-y-3">
-                    {feedbacks.map((f) => (
-                      <FeedbackCard key={f.id} item={f} />
-                    ))}
-                  </div>
+                {/* 피드백 리스트 */}
+                <div className="p-4 space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+                  {incompleteFeedbacks.map((f) => (
+                    <IncompleteFeedbackCard key={f.id} item={f} />
+                  ))}
                 </div>
               </div>
             </section>
           </div>
         </div>
       </main>
+
+      <AddMenteeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveMentee}
+      />
     </div>
   );
 }
