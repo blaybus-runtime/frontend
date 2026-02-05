@@ -12,7 +12,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-gray-900">
+    <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
       <Header userName="로그인" showAvatar={false} />
 
       {/* Content */}
@@ -30,77 +30,25 @@ export default function HomePage() {
             {/* 멘토 카드 */}
             <button
               onClick={() => setSelected("mentor")}
-              className={`flex w-36 flex-col items-center rounded-xl border-2 px-5 py-5 transition-all !bg-white ${
+              className={`rounded-xl overflow-hidden transition-all ${
                 selected === "mentor"
-                  ? "border-[#6D87ED] shadow-md"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "ring-3 ring-[#6D87ED]"
+                  : "ring-1 ring-gray-200 hover:ring-gray-300"
               }`}
             >
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                    stroke="#B0BEE8"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                    stroke="#B0BEE8"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-semibold text-gray-900">
-                멘토
-              </span>
+              <img src="/멘토_버튼.png" alt="멘토" className="w-36" />
             </button>
 
             {/* 멘티 카드 */}
             <button
               onClick={() => setSelected("mentee")}
-              className={`flex w-36 flex-col items-center rounded-xl border-2 px-5 py-5 transition-all !bg-white ${
+              className={`rounded-xl overflow-hidden transition-all ${
                 selected === "mentee"
-                  ? "border-[#6D87ED] shadow-md"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "ring-3 ring-[#6D87ED]"
+                  : "ring-1 ring-gray-200 hover:ring-gray-300"
               }`}
             >
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                    stroke="#B0BEE8"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                    stroke="#B0BEE8"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-semibold text-gray-900">
-                멘티
-              </span>
+              <img src="/멘티_버튼.png" alt="멘티" className="w-36" />
             </button>
           </div>
 
@@ -111,7 +59,7 @@ export default function HomePage() {
             className={`w-full rounded-lg py-2.5 text-sm font-bold text-white transition-all ${
               selected
                 ? "!bg-[#6D87ED] hover:!bg-[#5a74d6] cursor-pointer"
-                : "!bg-gray-300 cursor-not-allowed"
+                : "!bg-[#B0BEE8] cursor-not-allowed"
             }`}
           >
             시작하기
