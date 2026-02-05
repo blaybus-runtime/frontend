@@ -1,4 +1,4 @@
-export default function Header({ userName = "설이" }) {
+export default function Header({ userName = "설이", showAvatar = true }) {
   return (
     <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -13,7 +13,7 @@ export default function Header({ userName = "설이" }) {
           </button>
 
           <button className="flex items-center gap-2 rounded-full px-3 py-2 hover:bg-gray-100 !bg-white">
-            <div className="h-7 w-7 rounded-full bg-gray-200" />
+            {showAvatar && <div className="h-7 w-7 rounded-full bg-gray-200" />}
             <span className="text-base font-bold">{userName}</span>
           </button>
         </div>

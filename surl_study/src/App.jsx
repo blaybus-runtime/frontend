@@ -17,6 +17,7 @@ import viteLogo from '/vite.svg'
 
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import HomePage from "./pages/home/HomePage";
 import MenteeMain from "./pages/mentee/MainPage";
 import MentorMain from "./pages/mentor/MainPage";
 
@@ -24,6 +25,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 홈 화면 - 멘토/멘티 역할 선택 */}
+        <Route path="/" element={<HomePage />} />
         {/* 주소 뒤에 /mentee를 붙이면 이동 */}
         <Route path="/mentee" element={<MenteeMain />} />
         {/* 주소 뒤에 /mentor를 붙이면 이동 */}
