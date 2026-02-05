@@ -5,6 +5,8 @@ import WeeklyCalendar from "../../components/mentee/WeeklyCalendar";
 import ProgressCard from "../../components/mentee/ProgressCard";
 import ColumnCard from "../../components/mentee/ColumnCard";
 import FloatingButton from "../../components/common/FloatingButton";
+import AddTaskModal from "../../components/mentee/AddTaskModal";
+import { useAuth } from "../../context/AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
@@ -53,6 +55,8 @@ export default function MainPage() {
   const [totalRate, setTotalRate] = useState(0);
   const [subjectStats, setSubjectStats] = useState([]);
   const [dailyStats, setDailyStats] = useState([]);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const { user } = useAuth();
 
   // 오늘 할 일 API
   useEffect(() => {
@@ -127,7 +131,10 @@ export default function MainPage() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold !text-[#222222]">오늘 할 일</h2>
 
-              <button className="inline-flex items-center gap-2 rounded-full !bg-[#6D87ED] px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-100">
+              <button
+                onClick={() => setShowAddTask(true)}
+                className="inline-flex items-center gap-2 rounded-full !bg-[#6D87ED] px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-100 cursor-pointer"
+              >
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M11 7V15M7 11H15M21 11C21 16.5228 16.5228 21 11 21C5.47715 21 1 16.5228 1 11C1 5.47715 5.47715 1 11 1C16.5228 1 21 5.47715 21 11Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -173,6 +180,24 @@ export default function MainPage() {
       </main>
 
       <FloatingButton />
+
+      {showAddTask && (
+        <AddTaskModal
+          onClose={() => setShowAddTask(false)}
+          onTaskAdded={(data) => {
+            // API 응답의 tasks를 기존 목록에 추가
+            const newTasks = (data.tasks || []).map((t) => ({
+              id: t.taskId,
+              tag: t.subject,
+              tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
+              title: t.title,
+              status: "진행 중",
+              done: false,
+            }));
+            setTasks((prev) => [...prev, ...newTasks]);
+          }}
+        />
+      )}
     </div>
   );
 }

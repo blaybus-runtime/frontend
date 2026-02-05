@@ -1,22 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../../components/common/Header";
 import MentorMenteeCard from "../../components/mentor/MenteeCard";
 import IncompleteFeedbackCard from "../../components/mentor/IncompleteFeedbackCard";
 import WeeklyCalendar from "../../components/mentor/WeeklyCalendar";
 import AddMenteeModal from "../../components/mentor/AddMenteeModal";
-
-const mentees = [
-  { id: 1, name: "설이 멘티" },
-  { id: 2, name: "채영 멘티" },
-  { id: 3, name: "유나 멘티" },
-  { id: 4, name: "동수 멘티" },
-  { id: 5, name: "동하 멘티" },
-  { id: 6, name: "지원 멘티" },
-  { id: 7, name: "수빈 멘티" },
-  { id: 8, name: "정은 멘티" },
-  { id: 9, name: "재욱 멘티" },
-  { id: 10, name: "상현 멘티" },
-];
+import { useAuth } from "../../context/AuthContext";
+import { getMyMentees } from "../../api/matching";
 
 const incompleteFeedbacks = [
   { id: 1, mentee: "설이 멘티", subject: "영어", subjectColor: "rose", title: "단어암기", timeAgo: "12시간 전" },
@@ -28,13 +17,43 @@ const incompleteFeedbacks = [
   { id: 7, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
 ];
 
-// 멘티별 미완료 피드백 카운트 계산
-function getMenteeFeedbackCount(menteeName) {
-  return incompleteFeedbacks.filter((f) => f.mentee === menteeName).length;
+function getToday() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function MentorMainPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mentees, setMentees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const { token, user } = useAuth();
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    getMyMentees(token, getToday())
+      .then((res) => {
+        const list = res.data.map((m) => ({
+          id: m.menteeId,
+          name: m.name,
+          avatar: m.profileImageUrl,
+          feedbackCount: m.unwrittenFeedbackCount ?? 0,
+        }));
+        setMentees(list);
+      })
+      .catch((err) => {
+        console.error("멘티 목록 조회 실패:", err);
+        setMentees([]);
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
 
   const handleSaveMentee = (formData) => {
     console.log("멘티 저장:", formData);
@@ -43,7 +62,7 @@ export default function MentorMainPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Header userName="김자연" />
+      <Header userName={user?.name || "멘토"} />
 
       <main className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8">
         <div className="mx-auto max-w-6xl">
@@ -55,29 +74,33 @@ export default function MentorMainPage() {
                 <h2 className="text-lg font-semibold">멘티 {mentees.length}명</h2>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {mentees.map((m) => (
-                  <MentorMenteeCard
-                    key={m.id}
-                    mentee={m}
-                    feedbackCount={getMenteeFeedbackCount(m.name)}
-                  />
-                ))}
+              {loading ? (
+                <p className="text-sm text-gray-400">불러오는 중...</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {mentees.map((m) => (
+                    <MentorMenteeCard
+                      key={m.id}
+                      mentee={m}
+                      feedbackCount={m.feedbackCount}
+                    />
+                  ))}
 
-                {/* 멘티 추가 카드 */}
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer"
-                  style={{ backgroundColor: "white" }}
-                >
-                  <div className="h-16 w-16 rounded-full bg-[#E8EAF0] flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 5V19M5 12H19" stroke="#8B92A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <span className="mt-1 text-sm font-semibold text-[#8B92A0]">멘티 추가</span>
-                </button>
-              </div>
+                  {/* 멘티 추가 카드 */}
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer"
+                    style={{ backgroundColor: "white" }}
+                  >
+                    <div className="h-16 w-16 rounded-full bg-[#E8EAF0] flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="#8B92A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <span className="mt-1 text-sm font-semibold text-[#8B92A0]">멘티 추가</span>
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* RIGHT: 미완료 피드백 */}

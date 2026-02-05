@@ -85,7 +85,7 @@ export default function FeedbackDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header userName="김자연" />
+      <Header userName="설이" />
 
       {/* 상단 흰색 영역: 과목 & 제목 */}
       <div className="border-b border-gray-200 bg-white">
@@ -227,7 +227,7 @@ function CommentSection({ comments }) {
     if (!newComment.trim()) return;
     const comment = {
       id: Date.now(),
-      author: "김자연",
+      author: "설이",
       authorAvatar: null,
       timeAgo: "방금 전",
       content: newComment.trim(),

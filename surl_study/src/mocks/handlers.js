@@ -35,8 +35,14 @@ const db = {
     updatedAt: "2026-02-02T18:30:00",
   },
 
-  // 멘토가 관리하는 멘티 목록(중복 체크용)
-  mentees: [{ userId: 100, username: "mentee01" }],
+  // 멘토가 관리하는 멘티 목록
+  mentees: [
+    { userId: 100, username: "mentee01", name: "홍길동", profileImageUrl: null, unwrittenFeedbackCount: 2 },
+    { userId: 101, username: "mentee02", name: "설이 멘티", profileImageUrl: null, unwrittenFeedbackCount: 1 },
+    { userId: 102, username: "mentee03", name: "채영 멘티", profileImageUrl: null, unwrittenFeedbackCount: 3 },
+    { userId: 103, username: "mentee04", name: "유나 멘티", profileImageUrl: null, unwrittenFeedbackCount: 0 },
+    { userId: 104, username: "mentee05", name: "동수 멘티", profileImageUrl: null, unwrittenFeedbackCount: 0 },
+  ],
 };
 
 function getBearerToken(request) {
@@ -222,6 +228,151 @@ export const handlers = [
    * 멘티 profile 변경: schoolName, grade, targetUniv
    * 멘토 profile 변경: major, subjects, (bio 허용), (profileImage 언급되어 있어 반영 가능)
    */
+  /**
+   * GET /api/v1/matchings?date=yyyy-MM-dd
+   * 멘토의 멘티 카드 목록 조회
+   */
+  http.get(`${API_BASE_URL}/api/v1/matchings`, async ({ request }) => {
+    await delay(200);
+
+    const token = getBearerToken(request);
+    const role = token ? tokenToRole(token) : null;
+
+    if (!token || !role) {
+      return HttpResponse.json(
+        { status: 401, message: "Unauthorized", data: null },
+        { status: 401 }
+      );
+    }
+
+    if (role !== "MENTOR") {
+      return HttpResponse.json(
+        { status: 403, message: "멘토만 접근할 수 있습니다.", data: null },
+        { status: 403 }
+      );
+    }
+
+    const data = db.mentees.map((m) => ({
+      menteeId: m.userId,
+      name: m.name,
+      profileImageUrl: m.profileImageUrl,
+      unwrittenFeedbackCount: m.unwrittenFeedbackCount,
+    }));
+
+    return HttpResponse.json(
+      { status: 200, message: "Success", data },
+      { status: 200 }
+    );
+  }),
+
+  /**
+   * POST /api/v1/mentor/tasks/batch?mentorId={mentorId}
+   * 멘토가 멘티에게 할일 일괄 생성
+   */
+  http.post(`${API_BASE_URL}/api/v1/mentor/tasks/batch`, async ({ request }) => {
+    await delay(300);
+
+    const body = await request.json();
+    const { menteeId, subject, goal, title, startDate, endDate } = body || {};
+
+    if (!menteeId || !subject || !goal || !title || !startDate || !endDate) {
+      return HttpResponse.json(
+        { status: 400, message: "Bad Request", data: null },
+        { status: 400 }
+      );
+    }
+
+    // startDate ~ endDate 사이 날짜마다 task 생성
+    const tasks = [];
+    let taskIdCounter = Date.now();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      tasks.push({
+        taskId: taskIdCounter++,
+        date: d.toISOString().split("T")[0],
+        subject,
+        goal,
+        title,
+        status: "UNDONE",
+        createdBy: "MENTOR",
+      });
+    }
+
+    return HttpResponse.json(
+      {
+        status: 200,
+        message: "Success",
+        data: {
+          menteeId,
+          createdCount: tasks.length,
+          tasks,
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
+  /**
+   * PATCH /api/v1/study/tasks/:taskId?menteeId={menteeId}
+   * task 상태 변경 (TODO → DONE)
+   */
+  http.patch(`${API_BASE_URL}/api/v1/study/tasks/:taskId`, async ({ request, params }) => {
+    await delay(200);
+
+    const { taskId } = params;
+    const body = await request.json();
+    const isCompleted = body?.isCompleted ?? true;
+
+    return HttpResponse.json(
+      {
+        status: 200,
+        message: "Success",
+        data: { taskId: Number(taskId), isCompleted },
+      },
+      { status: 200 }
+    );
+  }),
+
+  /**
+   * POST /api/v1/mentor/worksheets
+   * worksheet 파일 업로드 (multipart/form-data)
+   */
+  http.post(`${API_BASE_URL}/api/v1/mentor/worksheets`, async ({ request }) => {
+    await delay(300);
+
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const title = formData.get("title");
+    const subject = formData.get("subject");
+    const materialType = formData.get("materialType") || "FILE";
+
+    if (!file || !title || !subject) {
+      return HttpResponse.json(
+        { status: 400, message: "file, title, subject는 필수입니다.", data: null },
+        { status: 400 }
+      );
+    }
+
+    return HttpResponse.json(
+      {
+        status: 200,
+        message: "Success",
+        data: {
+          worksheetId: Date.now(),
+          title,
+          subject,
+          materialType,
+          fileUrl: `/uploads/mock_${file.name}`,
+          mentorId: 7,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
   http.patch(`${API_BASE_URL}/api/v1/users/me`, async ({ request }) => {
     await delay(300);
 

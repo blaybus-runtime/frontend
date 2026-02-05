@@ -1,10 +1,22 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
+import LoginModal from "../../components/common/LoginModal";
 
 export default function HomePage() {
   const [selected, setSelected] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ProtectedRoute에서 리다이렉트되어 왔을 때 자동으로 로그인 모달 띄우기
+  useEffect(() => {
+    if (location.state?.showLogin) {
+      setShowLogin(true);
+      // state 초기화 (뒤로가기 시 다시 안 뜨도록)
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
 
   const handleStart = () => {
     if (selected === "mentor") navigate("/mentor");
@@ -66,6 +78,8 @@ export default function HomePage() {
           </button>
         </div>
       </div>
+
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
     </div>
   );
 }
