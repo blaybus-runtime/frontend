@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import LoginModal from "./LoginModal";
 
 export default function Header({ userName, showAvatar = true }) {
   const [showLogin, setShowLogin] = useState(false);
   const auth = useAuth();
+  const navigate = useNavigate();
 
   const displayName = auth.isLoggedIn ? auth.user.name : (userName || "로그인");
 
@@ -27,8 +28,12 @@ export default function Header({ userName, showAvatar = true }) {
 
             <button
               onClick={() => {
-                if (auth.isLoggedIn) return;
-                setShowLogin(true);
+                if (auth.isLoggedIn) {
+                  auth.logout();
+                  navigate("/");
+                } else {
+                  setShowLogin(true);
+                }
               }}
               className="flex items-center gap-2 rounded-full px-3 py-2 hover:bg-gray-100 !bg-white"
             >

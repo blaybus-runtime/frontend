@@ -5,7 +5,7 @@ import IncompleteFeedbackCard from "../../components/mentor/IncompleteFeedbackCa
 import WeeklyCalendar from "../../components/mentor/WeeklyCalendar";
 import AddMenteeModal from "../../components/mentor/AddMenteeModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMyMentees } from "../../api/matching";
+import { getMyMentees, createMentee } from "../../api/matching";
 
 const incompleteFeedbacks = [
   { id: 1, mentee: "설이 멘티", subject: "영어", subjectColor: "rose", title: "단어암기", timeAgo: "12시간 전" },
@@ -55,8 +55,41 @@ export default function MentorMainPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  const handleSaveMentee = (formData) => {
-    console.log("멘티 저장:", formData);
+  const handleSaveMentee = async (formData) => {
+    try {
+      const body = {
+        name: formData.name,
+        menteeProfile: {
+          phoneNumber: formData.phone,
+          email: formData.email,
+          highSchool: formData.school,
+          grade: Number(formData.grade) || 1,
+          subjects: [],
+          messageToMentor: "",
+        },
+      };
+
+      const res = await createMentee(token, body);
+      const payload = res.data ?? res;
+
+      // 새 멘티를 목록에 추가
+      setMentees((prev) => [
+        ...prev,
+        {
+          id: payload.user.userId,
+          name: payload.user.name,
+          avatar: payload.user.profileImage,
+          feedbackCount: 0,
+        },
+      ]);
+
+      // 생성된 계정 정보 알림
+      alert(`멘티 계정이 생성되었습니다.\n아이디: ${payload.user.username}\n임시 비밀번호: ${payload.tempPassword}`);
+    } catch (err) {
+      console.error("멘티 생성 실패:", err);
+      alert("멘티 생성에 실패했습니다. 다시 시도해주세요.");
+    }
+
     setIsModalOpen(false);
   };
 

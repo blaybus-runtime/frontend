@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { createTaskBatch, uploadWorksheet } from "../../api/task";
+import { getMyMentees } from "../../api/matching";
 
 const SUBJECTS = ["국어", "영어", "수학", "과학", "사회"];
 
@@ -15,7 +16,27 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
   const [loading, setLoading] = useState(false);
   const fileRef = useRef(null);
 
+  // 멘토용: 멘티 목록 & 선택된 멘티
+  const [mentees, setMentees] = useState([]);
+  const [selectedMenteeId, setSelectedMenteeId] = useState("");
+  const isMentor = user?.role === "MENTOR";
+
   const today = new Date().toISOString().split("T")[0];
+
+  // 멘토 로그인 시 멘티 목록 조회
+  useEffect(() => {
+    if (!isMentor || !token) return;
+
+    getMyMentees(token, today)
+      .then((res) => {
+        const list = (res.data ?? res) || [];
+        setMentees(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => {
+        console.error("멘티 목록 조회 실패:", err);
+        setMentees([]);
+      });
+  }, [isMentor, token, today]);
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
@@ -29,6 +50,11 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isMentor && !selectedMenteeId) {
+      setError("할일을 추가할 멘티를 선택해주세요.");
+      return;
+    }
 
     if (!subject || !title || !goal) {
       setError("과목, 할일, 목표를 모두 입력해주세요.");
@@ -48,12 +74,16 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
           title,
           subject,
         });
-        worksheetId = wsRes.data.worksheetId;
+        const wsPayload = wsRes.data ?? wsRes;
+        worksheetId = wsPayload.worksheetId;
       }
 
       // task 생성
+      const mentorId = user.userId;
+      const menteeId = isMentor ? Number(selectedMenteeId) : user.userId;
+
       const body = {
-        menteeId: user.userId,
+        menteeId,
         subject,
         goal,
         title,
@@ -62,8 +92,9 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
       };
       if (worksheetId) body.worksheetId = worksheetId;
 
-      const res = await createTaskBatch(token, user.userId, body);
-      onTaskAdded?.(res.data);
+      const res = await createTaskBatch(token, mentorId, body);
+      const payload = res.data ?? res;
+      onTaskAdded?.(payload);
       onClose();
     } catch (err) {
       console.error("할일 생성 실패:", err);
@@ -93,6 +124,25 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* 멘토용: 멘티 선택 */}
+          {isMentor && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">멘티 선택</label>
+              <select
+                value={selectedMenteeId}
+                onChange={(e) => setSelectedMenteeId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
+              >
+                <option value="">멘티를 선택하세요</option>
+                {mentees.map((m) => (
+                  <option key={m.menteeId} value={m.menteeId}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* 과목 선택 */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">과목</label>

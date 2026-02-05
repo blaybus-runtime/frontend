@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 // 과목별 색상
@@ -10,39 +11,59 @@ const SUBJECT_COLORS = {
 const EMPTY_COLOR = "transparent";
 const STROKE_COLOR = "#E5E7EB";
 
-// 더미 데이터: 24시간 각 시간대별 과목 (null이면 비어있음)
-const DEFAULT_SCHEDULE = [
-  { hour: 0,  subject: null },
-  { hour: 1,  subject: null },
-  { hour: 2,  subject: null },
-  { hour: 3,  subject: null },
-  { hour: 4,  subject: null },
-  { hour: 5,  subject: null },
-  { hour: 6,  subject: null },
-  { hour: 7,  subject: "국어" },
-  { hour: 8,  subject: "영어" },
-  { hour: 9,  subject: "영어" },
-  { hour: 10, subject: null },
-  { hour: 11, subject: "국어" },
-  { hour: 12, subject: "국어" },
-  { hour: 13, subject: null },
-  { hour: 14, subject: null },
-  { hour: 15, subject: "수학" },
-  { hour: 16, subject: "수학" },
-  { hour: 17, subject: "수학" },
-  { hour: 18, subject: "수학" },
-  { hour: 19, subject: null },
-  { hour: 20, subject: null },
-  { hour: 21, subject: null },
-  { hour: 22, subject: null },
-  { hour: 23, subject: null },
-];
-
 const DEFAULT_SUBJECTS = [
   { name: "국어", color: "#FDE68A" },
   { name: "수학", color: "#86EFAC" },
   { name: "영어", color: "#FDA4AF" },
 ];
+
+// timeRecords를 24시간 스케줄로 변환하는 함수
+// timeRecords: [{ id, subject, startTime: "HH:mm:ss", endTime: "HH:mm:ss" }, ...]
+function convertTimeRecordsToSchedule(timeRecords) {
+  // 24시간 초기화 (모두 null)
+  const schedule = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    subject: null,
+  }));
+
+  if (!timeRecords || timeRecords.length === 0) {
+    return schedule;
+  }
+
+  // 각 timeRecord를 해당 시간대에 매핑
+  timeRecords.forEach((record) => {
+    const startHour = parseInt(record.startTime?.split(":")[0], 10);
+    const endHour = parseInt(record.endTime?.split(":")[0], 10);
+    const endMinute = parseInt(record.endTime?.split(":")[1], 10);
+
+    if (isNaN(startHour) || isNaN(endHour)) return;
+
+    // startHour부터 endHour까지 해당 과목으로 채움
+    // endHour가 정각이 아니면 해당 시간도 포함
+    const actualEndHour = endMinute > 0 ? endHour : endHour - 1;
+
+    for (let h = startHour; h <= actualEndHour && h < 24; h++) {
+      schedule[h].subject = record.subject;
+    }
+  });
+
+  return schedule;
+}
+
+// 총 공부 시간 계산 (분 단위 → 시간)
+function calculateTotalHours(timeRecords) {
+  if (!timeRecords || timeRecords.length === 0) return 0;
+
+  let totalMinutes = 0;
+  timeRecords.forEach((record) => {
+    const [sh, sm] = (record.startTime || "00:00:00").split(":").map(Number);
+    const [eh, em] = (record.endTime || "00:00:00").split(":").map(Number);
+    const diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff > 0) totalMinutes += diff;
+  });
+
+  return Math.round(totalMinutes / 60 * 10) / 10; // 소수점 1자리
+}
 
 // 24시간 라벨 위치를 계산 (시계 방향, 12시=24/0)
 function getHourLabelPos(hour, radius) {
@@ -57,10 +78,21 @@ function getHourLabelPos(hour, radius) {
 }
 
 export default function StudyTimeChart({
-  schedule = DEFAULT_SCHEDULE,
-  totalHours = 8,
+  timeRecords = [],
   subjects = DEFAULT_SUBJECTS,
 }) {
+  // timeRecords를 24시간 스케줄로 변환
+  const schedule = useMemo(
+    () => convertTimeRecordsToSchedule(timeRecords),
+    [timeRecords]
+  );
+
+  // 총 공부 시간 계산
+  const totalHours = useMemo(
+    () => calculateTotalHours(timeRecords),
+    [timeRecords]
+  );
+
   // PieChart용 데이터: 모든 슬라이스가 동일한 크기(value=1), 24개
   const pieData = schedule.map((slot) => ({
     name: `${slot.hour}시`,

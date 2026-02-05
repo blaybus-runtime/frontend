@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../../components/common/Header";
 import TaskCard from "../../components/mentee/TaskCard";
 import WeeklyCalendar from "../../components/mentee/WeeklyCalendar";
@@ -6,6 +7,7 @@ import StudyTimeChart from "../../components/mentee/StudyTimeChart";
 import ColumnCard from "../../components/mentee/ColumnCard";
 import FloatingButton from "../../components/common/FloatingButton";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
+import StudyTimeModal from "../../components/mentee/StudyTimeModal";
 import { useAuth } from "../../context/AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -56,24 +58,43 @@ export default function MainPage() {
   const [subjectStats, setSubjectStats] = useState([]);
   const [dailyStats, setDailyStats] = useState([]);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [showStudyTime, setShowStudyTime] = useState(false);
+  const [plannerId, setPlannerId] = useState(null);
+  const [timeRecords, setTimeRecords] = useState([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // 오늘 할 일 API
   useEffect(() => {
-    const menteeId = 3; // TODO: 로그인한 멘티 ID로 교체
+    if (!user?.userId) return;
+    const menteeId = user.userId;
     const today = new Date().toISOString().split("T")[0]; // yyyy-MM-dd
 
     fetch(`${API_BASE}/api/v1/study/daily?menteeId=${menteeId}&date=${today}`)
       .then((res) => res.json())
       .then((json) => {
-        // 응답: { menteeId, date, todos: [{ id, content, subject, isCompleted, priority, taskType }] }
-        const todos = json.todos ?? [];
+        // 응답: { status, message, data: { menteeId, plannerId, date, todos: [...] } }
+        const data = json.data ?? json;
+        const responseMenteeId = data.menteeId ?? menteeId;
+        const todos = data.todos ?? [];
+
+        // plannerId 저장 (공부 시간 기록에 필요)
+        if (data.plannerId) {
+          setPlannerId(data.plannerId);
+        }
+
+        // timeRecords 저장 (공부 시간 차트에 필요)
+        if (data.timeRecords) {
+          setTimeRecords(data.timeRecords);
+        }
+
         const mapped = todos.map((t) => ({
           id: t.id,
+          menteeId: responseMenteeId,
           tag: t.subject,
           tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
           title: t.content,
-          status: t.isCompleted ? "완료" : "진행 중",
+          status: t.isCompleted ? "피드백 완료" : "피드백 대기",
           done: t.isCompleted,
         }));
         setTasks(mapped);
@@ -82,15 +103,21 @@ export default function MainPage() {
         console.error("오늘 할 일 API 호출 실패, 더미 데이터 사용:", err);
         setTasks(fallbackTasks);
       });
-  }, []);
+  }, [user]);
 
   // 칼럼 API
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/columns/recent?limit=5`)
       .then((res) => res.json())
       .then((json) => {
-        const titles = json.data.map((col) => col.title);
-        setColumns(titles);
+        // 백엔드 응답: { data: [...] } 또는 배열 직접 반환
+        const list = json.data ?? json;
+        if (Array.isArray(list) && list.length > 0) {
+          const titles = list.map((col) => col.title);
+          setColumns(titles);
+        } else {
+          setColumns(fallbackColumns);
+        }
       })
       .catch((err) => {
         console.error("칼럼 API 호출 실패, 더미 데이터 사용:", err);
@@ -100,8 +127,9 @@ export default function MainPage() {
 
   // 학습 진척도 API
   useEffect(() => {
+    if (!user?.userId) return;
     const { startDate, endDate } = getWeekRange();
-    const menteeId = 3; // TODO: 로그인한 멘티 ID로 교체
+    const menteeId = user.userId;
 
     fetch(`${API_BASE}/api/v1/study/progress?menteeId=${menteeId}&startDate=${startDate}&endDate=${endDate}`)
       .then((res) => res.json())
@@ -119,7 +147,7 @@ export default function MainPage() {
       .catch((err) => {
         console.error("진척도 API 호출 실패:", err);
       });
-  }, []);
+  }, [user]);
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900">
       <Header />
@@ -154,7 +182,10 @@ export default function MainPage() {
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-semibold !text-[#222222]">주간 캘린더</h2>
-                <button className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                <button
+                  onClick={() => navigate("/mentee/calendar")}
+                  className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 cursor-pointer"
+                >
                   <span className="text-xl leading-none">
                     <svg width="11" height="16" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M1.00012 1.00009L8.93924 6.51C9.47641 6.88281 9.51716 7.66236 9.02179 8.08914L1.00012 15.0001" stroke="#666666" stroke-width="2" stroke-linecap="round"/>
@@ -166,9 +197,12 @@ export default function MainPage() {
               <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                 <WeeklyCalendar dailyStats={dailyStats} />
                 <div className="mt-4 border-t border-gray-100 pt-4">
-                  <StudyTimeChart />
+                  <StudyTimeChart timeRecords={timeRecords} />
                 </div>
-                <button className="mt-4 w-full rounded-lg !bg-[#6D87ED] py-3 text-sm font-semibold text-white hover:!bg-[#5A74D6] transition-colors">
+                <button
+                  onClick={() => setShowStudyTime(true)}
+                  className="mt-4 w-full rounded-lg !bg-[#6D87ED] py-3 text-sm font-semibold text-white hover:!bg-[#5A74D6] transition-colors cursor-pointer"
+                >
                   공부 시간 기록
                 </button>
               </div>
@@ -184,6 +218,27 @@ export default function MainPage() {
 
       <FloatingButton />
 
+      {showStudyTime && (
+        <StudyTimeModal
+          plannerId={plannerId}
+          onClose={() => setShowStudyTime(false)}
+          onRecorded={() => {
+            // 공부 시간 기록 후 데이터 새로고침
+            const menteeId = user.userId;
+            const today = new Date().toISOString().split("T")[0];
+            fetch(`${API_BASE}/api/v1/study/daily?menteeId=${menteeId}&date=${today}`)
+              .then((res) => res.json())
+              .then((json) => {
+                const data = json.data ?? json;
+                if (data.timeRecords) {
+                  setTimeRecords(data.timeRecords);
+                }
+              })
+              .catch((err) => console.error("시간 기록 새로고침 실패:", err));
+          }}
+        />
+      )}
+
       {showAddTask && (
         <AddTaskModal
           onClose={() => setShowAddTask(false)}
@@ -191,10 +246,11 @@ export default function MainPage() {
             // API 응답의 tasks를 기존 목록에 추가
             const newTasks = (data.tasks || []).map((t) => ({
               id: t.taskId,
+              menteeId: data.menteeId,
               tag: t.subject,
               tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
               title: t.title,
-              status: "진행 중",
+              status: "피드백 대기",
               done: false,
             }));
             setTasks((prev) => [...prev, ...newTasks]);

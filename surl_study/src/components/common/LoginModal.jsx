@@ -24,7 +24,9 @@ export default function LoginModal({ onClose }) {
 
     try {
       const res = await login(username, password);
-      const { accessToken, user } = res.data;
+      // 실제 백엔드: { accessToken, user }, Mock: { data: { accessToken, user } }
+      const payload = res.data ?? res;
+      const { accessToken, user } = payload;
 
       auth.login(accessToken, user);
       onClose();

@@ -67,3 +67,18 @@ export async function uploadWorksheet(token, { file, title, subject, materialTyp
 
   return json;
 }
+
+/**
+ * POST /api/v1/study/time-records
+ * 공부 시간 기록
+ *
+ * body: { plannerId, subject, startTime: "HH:mm:ss", endTime: "HH:mm:ss" }
+ * 응답: { status, message, data: timeRecordId }
+ */
+export function recordStudyTime(token, body) {
+  return apiClient("/api/v1/study/time-records", {
+    method: "POST",
+    token,
+    body,
+  });
+}

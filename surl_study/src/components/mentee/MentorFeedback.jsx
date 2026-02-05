@@ -41,7 +41,7 @@ export default function MentorFeedback({ feedback, comments }) {
 
       {/* 2. 댓글 헤더 */}
       <div className="mt-6 flex items-center gap-2 px-1">
-        <span className="text-base">💬</span>
+        <img src="/comment_icon.png" alt="댓글" className="h-5 w-5" />
         <span className="text-sm font-bold text-gray-900">
           댓글 {commentList.length}
         </span>
@@ -80,22 +80,8 @@ export default function MentorFeedback({ feedback, comments }) {
               key={comment.id}
               className={`flex gap-3 ${idx > 0 ? "pt-4" : ""} ${idx < commentList.length - 1 ? "pb-4" : ""}`}
             >
-              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-gray-400">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M3 1V8H11"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                <img src="/reply.png" alt="답글" className="h-4 w-4" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">

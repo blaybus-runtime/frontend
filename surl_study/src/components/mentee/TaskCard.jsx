@@ -14,7 +14,9 @@ export default function TaskCard({ task, onStatusChange }) {
     const newStatus = !done;
 
     try {
-      await updateTaskStatus(token, task.id, user.userId, newStatus);
+      // task.menteeId가 있으면 사용, 없으면 로그인 유저 ID 폴백
+      const menteeId = task.menteeId ?? user.userId;
+      await updateTaskStatus(token, task.id, menteeId, newStatus);
       setDone(newStatus);
       onStatusChange?.(task.id, newStatus);
     } catch (err) {
@@ -24,7 +26,7 @@ export default function TaskCard({ task, onStatusChange }) {
     }
   };
 
-  const statusText = done ? "완료" : task.status || "진행 중";
+  const statusText = done ? "피드백 완료" : task.status || "피드백 대기";
 
   return (
     <div className="w-full rounded-xl border border-gray-200 bg-white px-5 py-4">
