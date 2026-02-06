@@ -20,20 +20,15 @@ export default function FeedbackListCard({ count, items, subjectStyle, onToggleF
                       {it.type}
                     </span>
                   </div>
-                  <div className="mt-2 text-sm font-semibold text-gray-900">{it.title}</div>
-                  <div className="mt-1 text-xs text-gray-500">{it.desc}</div>
+                  <div>
+                    <span className="mt-2 text-sm font-semibold text-gray-900">{it.title}</span>
+                    <span className="mx-2">|</span>
+                    <span className="mt-1 text-xs text-gray-500">{it.desc}</span>                    
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
                   <div className="text-xs text-gray-400">{it.date.replaceAll("-", ".")}</div>
-                  <button
-                    onClick={() => onToggleFeedback(it.id)}
-                    className={`rounded-md px-3 py-2 text-xs font-semibold ${
-                      it.feedbackDone ? "text-indigo-600 hover:bg-indigo-50" : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {it.feedbackDone ? "피드백 완료" : "피드백 쓰기"}
-                  </button>
                 </div>
               </div>
             );
