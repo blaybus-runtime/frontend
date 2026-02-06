@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 export default function FeedbackListCard({ count, items, subjectStyle, onToggleFeedback }) {
+  const navigate = useNavigate();
+
   return (
     <>
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
@@ -10,7 +14,11 @@ export default function FeedbackListCard({ count, items, subjectStyle, onToggleF
           {items.map((it) => {
             const s = subjectStyle(it.subject);
             return (
-              <div key={it.id} className="flex items-center justify-between gap-4 px-4 py-4">
+              <div
+                key={it.id}
+                onClick={() => navigate(`/mentor/feedback/${it.id}`)}
+                className="flex items-center justify-between gap-4 px-4 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+              >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${s.pill}`}>

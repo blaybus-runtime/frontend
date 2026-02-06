@@ -1,4 +1,4 @@
-import { useMemo, useState, forwardRef } from "react";
+import { useEffect, useMemo, useState, useCallback, forwardRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -11,22 +11,13 @@ import TodoRow from "../../components/mentor_detail/TodoRow";
 import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import CreateTodoModal from "../../components/mentor_detail/CreateTodoModal";
+import { useAuth } from "../../context/AuthContext";
+import { getMenteeDailyPlan } from "../../api/task";
 
 const mockMenteeById = {
   1: { id: 1, name: "설이 멘티", school: "달천고등학교 3학년", track: "수시전형" },
   2: { id: 2, name: "채영 멘티", school: "OO고등학교 2학년", track: "정시전형" },
 };
-
-const initialTodos = [
-  { id: 101, subject: "기타", type: "PDF", title: "플래너 업로드", desc: "플래너 업로드하기", date: "2026-02-01", taskDone: true, feedbackDone: false },
-  { id: 102, subject: "영어", type: "PDF", title: "단어 시험", desc: "워드서첩 3단원 시험보기", date: "2026-02-01", taskDone: true, feedbackDone: false },
-  { id: 103, subject: "영어", type: "PDF", title: "단어 암기", desc: "워드서첩 3단원 외우기", date: "2026-02-01", taskDone: false, feedbackDone: false },
-  { id: 104, subject: "국어", type: "PDF", title: "강지연 국어", desc: "강지연 국어5P 풀기", date: "2026-02-01", taskDone: true, feedbackDone: true },
-  { id: 105, subject: "국어", type: "PDF", title: "독서2 지문", desc: "독서2 지문 풀이", date: "2026-02-01", taskDone: true, feedbackDone: true },
-
-  { id: 201, subject: "영어", type: "PDF", title: "단어 암기", desc: "워드서첩 3단원 외우기", date: "2026-01-30", taskDone: true, feedbackDone: false },
-  { id: 202, subject: "수학", type: "PDF", title: "수학 오답노트", desc: "5P 풀기", date: "2026-02-02", taskDone: false, feedbackDone: false },
-];
 
 const initialMemos = ["후반 집중력 키우기", "중요단어 지문 반복 복습 우선", "오답은 개념 복습보다 지문 구조 파악 지점에서 주로 발생", "단기 목표 지문 처리 시간 단축"];
 
@@ -76,16 +67,48 @@ const CustomDateInput = forwardRef(function CustomDateInput({ value, onClick }, 
 export default function MentorMenteeDetailPage() {
   const nav = useNavigate();
   const { menteeId } = useParams();
+  const { token } = useAuth();
 
   const mentee = mockMenteeById[menteeId] ?? { id: menteeId, name: `멘티 ${menteeId}`, school: "학교 정보", track: "전형" };
 
-  const [selectedDate, setSelectedDate] = useState("2026-02-01");
-  const [todos, setTodos] = useState(initialTodos);
+  const today = format(new Date(), "yyyy-MM-dd");
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [memos, setMemos] = useState(initialMemos);
   const [openCreate, setOpenCreate] = useState(false);
 
+  // API에서 할 일 데이터 조회
+  const fetchDailyTodos = useCallback(async (date) => {
+    setLoading(true);
+    try {
+      const json = await getMenteeDailyPlan(token, menteeId, date);
+      const data = json.data ?? json;
+      const apiTodos = (data.todos ?? []).map((t) => ({
+        id: t.id,
+        subject: t.subject,
+        type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
+        title: t.title || t.content,
+        desc: t.goal || t.content,
+        date: data.date || date,
+        taskDone: t.isCompleted ?? false,
+        feedbackDone: t.isFeedbackDone ?? false,
+      }));
+      setTodos(apiTodos);
+    } catch (err) {
+      console.error("멘티 일일 할 일 API 호출 실패:", err);
+      setTodos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, menteeId]);
 
-  const todosOfDay = useMemo(() => todos.filter((t) => t.date === selectedDate), [todos, selectedDate]);
+  // selectedDate가 변경될 때마다 API 호출
+  useEffect(() => {
+    fetchDailyTodos(selectedDate);
+  }, [selectedDate, fetchDailyTodos]);
+
+  const todosOfDay = todos;
 
   const pendingFeedback = useMemo(
     () => todos.filter((t) => t.taskDone && !t.feedbackDone).sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -191,7 +214,13 @@ export default function MentorMenteeDetailPage() {
                       />
                     ))}
 
-                    {todosOfDay.length === 0 && (
+                    {loading && (
+                      <div className="rounded-lg border border-dashed border-gray-200 p-6 text-sm text-gray-400 text-center">
+                        불러오는 중...
+                      </div>
+                    )}
+
+                    {!loading && todosOfDay.length === 0 && (
                       <div className="rounded-lg border border-dashed border-gray-200 p-6 text-sm text-gray-500">
                         선택한 날짜에 할 일이 없습니다.
                       </div>
@@ -219,23 +248,9 @@ export default function MentorMenteeDetailPage() {
         onClose={() => setOpenCreate(false)}
         onSubmit={(payload) => {
           console.log("새 할일 payload:", payload);
-
-          // 예시: 단일 날짜로 저장하고 싶으면 selectedDate로 넣기
-          const newTodo = {
-            id: Date.now(),
-            subject: payload.subject,
-            type: "PDF",
-            title: payload.title,
-            desc: payload.goal,
-            date: payload.startDateISO, // 또는 selectedDate
-            taskDone: false,
-            feedbackDone: false,
-          };
-
-          setTodos((prev) => [newTodo, ...prev]);
-
-          // 모달에서 onClose도 호출하지만, 안전하게 여기서도 닫아도 됨
           setOpenCreate(false);
+          // 할일 생성 후 현재 날짜 데이터를 API에서 다시 불러오기
+          fetchDailyTodos(selectedDate);
         }}
       />
 

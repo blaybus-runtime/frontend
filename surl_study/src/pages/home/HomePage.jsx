@@ -2,12 +2,21 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LoginModal from "../../components/common/LoginModal";
+import { useAuth } from "../../context/AuthContext";
 
 export default function HomePage() {
   const [selected, setSelected] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoggedIn, user } = useAuth();
+
+  // 이미 로그인되어 있으면 role에 맞는 페이지로 이동
+  useEffect(() => {
+    if (isLoggedIn && user?.role) {
+      navigate(user.role === "MENTOR" ? "/mentor" : "/mentee", { replace: true });
+    }
+  }, [isLoggedIn, user, navigate]);
 
   // ProtectedRoute에서 리다이렉트되어 왔을 때 자동으로 로그인 모달 띄우기
   useEffect(() => {
@@ -19,8 +28,8 @@ export default function HomePage() {
   }, [location.state]);
 
   const handleStart = () => {
-    if (selected === "mentor") navigate("/mentor");
-    if (selected === "mentee") navigate("/mentee");
+    if (!selected) return;
+    setShowLogin(true);
   };
 
   return (

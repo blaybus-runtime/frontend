@@ -26,13 +26,12 @@ const fallbackTasks = [
   { id: 2, tag: "영어", tagColor: "bg-rose-100 text-rose-700", title: "단어 암기", status: "피드백 대기", done: false },
 ];
 
-// 더미 데이터 (API 실패 시 폴백)
-const fallbackColumns = [
-  "짧은 시간이 힘, 자투리 10분이 성적을 바꾼다",
-  "공부가 하기 싫은 날, 그래도 포기하지 않는 방법",
-  "지금 당장 생산적인 공부를 하는 법(2)",
-  "지금 당장 생산적인 공부를 하는 법(1)",
-  "수능 국어 공부법: '읽어야할 것'은 진짜입니다",
+// 서울대쌤 칼럼 (하드코딩)
+const COLUMNS = [
+  { title: "짧은 시간이 힘, 자투리 10분이 성적을 바꾼다", url: "https://malachite-fontina-5e0.notion.site/10-2a2a56db4060803ca058df5adf8e85b2" },
+  { title: "공부가 하기 싫은 날, 그래도 포기하지 않는 방법", url: "https://malachite-fontina-5e0.notion.site/2a2a56db40608002adbfff5b2891a30e" },
+  { title: "지금 당장 생산적인 공부를 하는 법(1)", url: "https://malachite-fontina-5e0.notion.site/1-2f2a56db40608040bb50cfda6bc9fbeb" },
+  { title: "수능 국어 공부법: '읽어야할 것'은 진짜입니다", url: "https://malachite-fontina-5e0.notion.site/2a3a56db406080c4993fc37c401887f4" },
 ];
 
 // 이번 주 월~일 날짜를 yyyy-MM-dd 형식으로 구하는 헬퍼
@@ -50,7 +49,6 @@ function getWeekRange() {
 }
 
 export default function MainPage() {
-  const [columns, setColumns] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [totalRate, setTotalRate] = useState(0);
   const [subjectStats, setSubjectStats] = useState([]);
@@ -102,26 +100,6 @@ export default function MainPage() {
         setTasks(fallbackTasks);
       });
   }, [user]);
-
-  // 칼럼 API
-  useEffect(() => {
-    fetch(`${API_BASE}/api/v1/columns/recent?limit=5`)
-      .then((res) => res.json())
-      .then((json) => {
-        // 백엔드 응답: { data: [...] } 또는 배열 직접 반환
-        const list = json.data ?? json;
-        if (Array.isArray(list) && list.length > 0) {
-          const titles = list.map((col) => col.title);
-          setColumns(titles);
-        } else {
-          setColumns(fallbackColumns);
-        }
-      })
-      .catch((err) => {
-        console.error("칼럼 API 호출 실패, 더미 데이터 사용:", err);
-        setColumns(fallbackColumns);
-      });
-  }, []);
 
   // 학습 진척도 API
   useEffect(() => {
@@ -208,7 +186,7 @@ export default function MainPage() {
 
             <div>
               <h2 className="mb-3 text-lg font-semibold !text-[#222222]">서울대쌤 칼럼</h2>
-              <ColumnCard items={columns} />
+              <ColumnCard items={COLUMNS} />
             </div>
           </section>
         </div>

@@ -1,8 +1,14 @@
+import { useNavigate } from "react-router-dom";
+
 export default function MentorMenteeCard({ mentee, feedbackCount = 0 }) {
   const hasFeedback = feedbackCount > 0;
+  const navigate = useNavigate();
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div
+      onClick={() => navigate(`/mentor/mentees/${mentee.id}`)}
+      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+    >
       <div className="flex flex-col items-center">
         <img
           src={mentee.avatar || "/Avator_icon.png"}

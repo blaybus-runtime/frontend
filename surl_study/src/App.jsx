@@ -34,16 +34,14 @@ export default function App() {
       <Routes>
         {/* 홈 화면 - 멘토/멘티 역할 선택 */}
         <Route path="/" element={<HomePage />} />
-        {/* 멘티 페이지 (로그인 필수) */}
-        <Route path="/mentee" element={<ProtectedRoute><MenteeMain /></ProtectedRoute>} />
-        <Route path="/mentee/task/:taskId" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
-        <Route path="/mentee/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-        {/* 멘토 페이지 (로그인 필수) */}
-        <Route path="/mentor" element={<ProtectedRoute><MentorMain /></ProtectedRoute>} />
-        <Route path="/mentor/feedback/:feedbackId" element={<ProtectedRoute><FeedbackDetailPage /></ProtectedRoute>} />
-
-        <Route path="/mentor/mentees/:menteeId" element={<MentorMenteeDetailPage />} />
-
+        {/* 멘티 페이지 (MENTEE role 필수) */}
+        <Route path="/mentee" element={<ProtectedRoute requiredRole="MENTEE"><MenteeMain /></ProtectedRoute>} />
+        <Route path="/mentee/task/:taskId" element={<ProtectedRoute requiredRole="MENTEE"><TaskDetailPage /></ProtectedRoute>} />
+        <Route path="/mentee/calendar" element={<ProtectedRoute requiredRole="MENTEE"><CalendarPage /></ProtectedRoute>} />
+        {/* 멘토 페이지 (MENTOR role 필수) */}
+        <Route path="/mentor" element={<ProtectedRoute requiredRole="MENTOR"><MentorMain /></ProtectedRoute>} />
+        <Route path="/mentor/feedback/:feedbackId" element={<ProtectedRoute requiredRole="MENTOR"><FeedbackDetailPage /></ProtectedRoute>} />
+        <Route path="/mentor/mentees/:menteeId" element={<ProtectedRoute requiredRole="MENTOR"><MentorMenteeDetailPage /></ProtectedRoute>} />
       </Routes>
       </AuthProvider>
     </BrowserRouter>

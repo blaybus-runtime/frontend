@@ -1,6 +1,19 @@
 import { apiClient } from "./client";
 
 /**
+ * GET /api/v1/mentor/planners/daily?menteeId={menteeId}&date={date}
+ * 멘토가 특정 멘티의 일일 할 일 목록 조회
+ *
+ * 응답: { status, message, data: { menteeId, plannerId, date, todos: [...], timeRecords: [...] } }
+ */
+export function getMenteeDailyPlan(token, menteeId, date) {
+  return apiClient(`/api/v1/mentor/planners/daily?menteeId=${menteeId}&date=${date}`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
  * POST /api/v1/mentor/tasks/batch?mentorId={mentorId}
  * 멘토가 멘티에게 할일을 일괄 생성
  *
