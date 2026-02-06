@@ -9,6 +9,7 @@ import FloatingButton from "../../components/common/FloatingButton";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
 import StudyTimeModal from "../../components/mentee/StudyTimeModal";
 import { useAuth } from "../../context/AuthContext";
+import { getStudyDaily } from "../../api/task";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
@@ -28,10 +29,10 @@ const fallbackTasks = [
 
 // 서울대쌤 칼럼 (하드코딩)
 const COLUMNS = [
-  { title: "짧은 시간이 힘, 자투리 10분이 성적을 바꾼다", url: "https://malachite-fontina-5e0.notion.site/10-2a2a56db4060803ca058df5adf8e85b2" },
-  { title: "공부가 하기 싫은 날, 그래도 포기하지 않는 방법", url: "https://malachite-fontina-5e0.notion.site/2a2a56db40608002adbfff5b2891a30e" },
-  { title: "지금 당장 생산적인 공부를 하는 법(1)", url: "https://malachite-fontina-5e0.notion.site/1-2f2a56db40608040bb50cfda6bc9fbeb" },
-  { title: "수능 국어 공부법: '읽어야할 것'은 진짜입니다", url: "https://malachite-fontina-5e0.notion.site/2a3a56db406080c4993fc37c401887f4" },
+  { title: "🍀짧은 시간이 힘, 자투리 10분이 성적을 바꾼다", url: "https://malachite-fontina-5e0.notion.site/10-2a2a56db4060803ca058df5adf8e85b2" },
+  { title: "🔥공부가 하기 싫은 날, 그래도 포기하지 않는 방법", url: "https://malachite-fontina-5e0.notion.site/2a2a56db40608002adbfff5b2891a30e" },
+  { title: "📚지금 당장 생산적인 공부를 하는 법(1)", url: "https://malachite-fontina-5e0.notion.site/1-2f2a56db40608040bb50cfda6bc9fbeb" },
+  { title: "📕수능 국어 공부법: '읽어야할 것'은 진짜입니다", url: "https://malachite-fontina-5e0.notion.site/2a3a56db406080c4993fc37c401887f4" },
 ];
 
 // 이번 주 월~일 날짜를 yyyy-MM-dd 형식으로 구하는 헬퍼
@@ -57,48 +58,42 @@ export default function MainPage() {
   const [showStudyTime, setShowStudyTime] = useState(false);
   const [plannerId, setPlannerId] = useState(null);
   const [timeRecords, setTimeRecords] = useState([]);
-  const { user } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
+
+  // 오늘 할 일 데이터를 가져오는 공통 함수
+  const fetchDailyTasks = async (date) => {
+    const menteeId = user.userId;
+    try {
+      const json = await getStudyDaily(token, menteeId, date);
+      const data = json.data ?? json;
+      const responseMenteeId = data.menteeId ?? menteeId;
+      const todos = data.todos ?? [];
+
+      if (data.plannerId) setPlannerId(data.plannerId);
+      if (data.timeRecords) setTimeRecords(data.timeRecords);
+
+      const mapped = todos.map((t) => ({
+        id: t.id,
+        menteeId: responseMenteeId,
+        tag: t.subject,
+        tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
+        title: t.content,
+        status: t.isCompleted ? "피드백 완료" : "피드백 대기",
+        done: t.isCompleted,
+      }));
+      setTasks(mapped);
+    } catch (err) {
+      console.error("오늘 할 일 API 호출 실패, 더미 데이터 사용:", err);
+      setTasks(fallbackTasks);
+    }
+  };
 
   // 오늘 할 일 API
   useEffect(() => {
     if (!user?.userId) return;
-    const menteeId = user.userId;
-    const today = new Date().toISOString().split("T")[0]; // yyyy-MM-dd
-
-    fetch(`${API_BASE}/api/v1/study/daily?menteeId=${menteeId}&date=${today}`)
-      .then((res) => res.json())
-      .then((json) => {
-        // 응답: { status, message, data: { menteeId, plannerId, date, todos: [...] } }
-        const data = json.data ?? json;
-        const responseMenteeId = data.menteeId ?? menteeId;
-        const todos = data.todos ?? [];
-
-        // plannerId 저장 (공부 시간 기록에 필요)
-        if (data.plannerId) {
-          setPlannerId(data.plannerId);
-        }
-
-        // timeRecords 저장 (공부 시간 차트에 필요)
-        if (data.timeRecords) {
-          setTimeRecords(data.timeRecords);
-        }
-
-        const mapped = todos.map((t) => ({
-          id: t.id,
-          menteeId: responseMenteeId,
-          tag: t.subject,
-          tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
-          title: t.content,
-          status: t.isCompleted ? "피드백 완료" : "피드백 대기",
-          done: t.isCompleted,
-        }));
-        setTasks(mapped);
-      })
-      .catch((err) => {
-        console.error("오늘 할 일 API 호출 실패, 더미 데이터 사용:", err);
-        setTasks(fallbackTasks);
-      });
+    const today = new Date().toISOString().split("T")[0];
+    fetchDailyTasks(today);
   }, [user]);
 
   // 학습 진척도 API
@@ -199,18 +194,8 @@ export default function MainPage() {
           plannerId={plannerId}
           onClose={() => setShowStudyTime(false)}
           onRecorded={() => {
-            // 공부 시간 기록 후 데이터 새로고침
-            const menteeId = user.userId;
             const today = new Date().toISOString().split("T")[0];
-            fetch(`${API_BASE}/api/v1/study/daily?menteeId=${menteeId}&date=${today}`)
-              .then((res) => res.json())
-              .then((json) => {
-                const data = json.data ?? json;
-                if (data.timeRecords) {
-                  setTimeRecords(data.timeRecords);
-                }
-              })
-              .catch((err) => console.error("시간 기록 새로고침 실패:", err));
+            fetchDailyTasks(today);
           }}
         />
       )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, forwardRef } from "react";
+import { useEffect, useState, useCallback, forwardRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -12,7 +12,7 @@ import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import CreateTodoModal from "../../components/mentor_detail/CreateTodoModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMenteeDailyPlan } from "../../api/task";
+import { getMenteeDailyPlan, getPendingFeedback } from "../../api/task";
 
 const mockMenteeById = {
   1: { id: 1, name: "설이 멘티", school: "달천고등학교 3학년", track: "수시전형" },
@@ -75,6 +75,7 @@ export default function MentorMenteeDetailPage() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [pendingFeedback, setPendingFeedback] = useState([]);
   const [memos, setMemos] = useState(initialMemos);
   const [openCreate, setOpenCreate] = useState(false);
 
@@ -83,16 +84,18 @@ export default function MentorMenteeDetailPage() {
     setLoading(true);
     try {
       const json = await getMenteeDailyPlan(token, menteeId, date);
-      const data = json.data ?? json;
-      const apiTodos = (data.todos ?? []).map((t) => ({
-        id: t.id,
+      // 응답: { data: [ { taskId, title, content, subject, taskType, isTaskCompleted, isFeedbackCompleted } ] }
+      const list = json.data ?? json;
+      const tasks = Array.isArray(list) ? list : (list.todos ?? []);
+      const apiTodos = tasks.map((t) => ({
+        id: t.taskId ?? t.id,
         subject: t.subject,
         type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
         title: t.title || t.content,
-        desc: t.goal || t.content,
-        date: data.date || date,
-        taskDone: t.isCompleted ?? false,
-        feedbackDone: t.isFeedbackDone ?? false,
+        desc: t.content || t.title,
+        date: date,
+        taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
+        feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
       }));
       setTodos(apiTodos);
     } catch (err) {
@@ -110,10 +113,32 @@ export default function MentorMenteeDetailPage() {
 
   const todosOfDay = todos;
 
-  const pendingFeedback = useMemo(
-    () => todos.filter((t) => t.taskDone && !t.feedbackDone).sort((a, b) => (a.date < b.date ? 1 : -1)),
-    [todos]
-  );
+  // 전체 미완료 피드백을 별도 API로 조회
+  const fetchPendingFeedback = useCallback(async () => {
+    try {
+      const json = await getPendingFeedback(token, menteeId);
+      const list = json.data ?? json;
+      const items = (Array.isArray(list) ? list : []).map((t) => ({
+        id: t.taskId,
+        subject: t.subject,
+        type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
+        title: t.title || t.content,
+        desc: t.content || t.title,
+        date: t.date,
+        taskDone: true,
+        feedbackDone: false,
+      }));
+      setPendingFeedback(items);
+    } catch (err) {
+      console.error("미완료 피드백 API 호출 실패:", err);
+      setPendingFeedback([]);
+    }
+  }, [token, menteeId]);
+
+  // 페이지 로드 시 미완료 피드백 조회
+  useEffect(() => {
+    fetchPendingFeedback();
+  }, [fetchPendingFeedback]);
 
   const toggleTaskDone = (id) => {
     setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, taskDone: !t.taskDone } : t)));

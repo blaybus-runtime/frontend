@@ -1,6 +1,20 @@
 import { apiClient } from "./client";
 
 /**
+ * GET /api/v1/study/daily?menteeId={menteeId}&date={date}
+ * 멘티 홈화면: 특정 날짜의 todo 리스트 조회
+ * 멘티 달력화면: 특정 날짜 선택 시 todo 리스트 조회
+ *
+ * 응답: { status, message, data: { menteeId, plannerId, date, todos: [...], timeRecords: [...] } }
+ */
+export function getStudyDaily(token, menteeId, date) {
+  return apiClient(`/api/v1/study/daily?menteeId=${menteeId}&date=${date}`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
  * GET /api/v1/mentor/planners/daily?menteeId={menteeId}&date={date}
  * 멘토가 특정 멘티의 일일 할 일 목록 조회
  *
@@ -8,6 +22,19 @@ import { apiClient } from "./client";
  */
 export function getMenteeDailyPlan(token, menteeId, date) {
   return apiClient(`/api/v1/mentor/planners/daily?menteeId=${menteeId}&date=${date}`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
+ * GET /api/v1/mentor/planners/pending-feedback?menteeId={menteeId}
+ * 멘티의 전체 미완료 피드백 목록 조회 (과제완료 + 피드백 미작성)
+ *
+ * 응답: { status, data: [ { taskId, title, content, subject, taskType, date } ] }
+ */
+export function getPendingFeedback(token, menteeId) {
+  return apiClient(`/api/v1/mentor/planners/pending-feedback?menteeId=${menteeId}`, {
     method: "GET",
     token,
   });
@@ -22,6 +49,21 @@ export function getMenteeDailyPlan(token, menteeId, date) {
  */
 export function createTaskBatch(token, mentorId, body) {
   return apiClient(`/api/v1/mentor/tasks/batch?mentorId=${mentorId}`, {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+/**
+ * POST /api/v1/mentee/tasks/batch
+ * 멘티가 새로운 task 생성 (같은 과제 여러 날짜에 일괄 생성 가능)
+ *
+ * body: { subject, goal, title, startDate, endDate, days?, worksheetId? }
+ * 응답: { data: { menteeId, createdCount, tasks: [{ taskId, date, subject, goal, title, status, createdBy }] } }
+ */
+export function createMenteeTaskBatch(token, body) {
+  return apiClient(`/api/v1/mentee/tasks/batch`, {
     method: "POST",
     token,
     body,

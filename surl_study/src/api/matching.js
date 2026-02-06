@@ -10,6 +10,15 @@ export function getMyMentees(token, date) {
 }
 
 /**
+ * GET /api/v1/matchings/daily-tasks
+ * 멘토의 모든 멘티 전체 미완료 피드백 목록 조회 (date 없으면 전체)
+ * 응답: { status, message, data: [{ menteeId, menteeName, plannerId, taskId, subject, taskContent, completedAt }] }
+ */
+export function getAllPendingFeedbacks(token) {
+  return apiClient("/api/v1/matchings/daily-tasks", { token });
+}
+
+/**
  * POST /api/v1/mentors/me/mentees
  * 멘토가 새 멘티를 생성
  * body: { name, menteeProfile: { phoneNumber, email, highSchool, grade, targetUniv, subjects, messageToMentor } }

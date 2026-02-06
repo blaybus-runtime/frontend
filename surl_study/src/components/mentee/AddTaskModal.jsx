@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { createTaskBatch, uploadWorksheet } from "../../api/task";
+import { createTaskBatch, createMenteeTaskBatch, uploadWorksheet } from "../../api/task";
 import { getMyMentees } from "../../api/matching";
 
 const SUBJECTS = ["국어", "영어", "수학"];
@@ -112,12 +112,8 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
         worksheetId = wsPayload.worksheetId;
       }
 
-      // task 생성
-      const mentorId = user.userId;
-      const menteeId = isMentor ? Number(selectedMenteeId) : user.userId;
-
+      // task 생성: 멘토는 /api/v1/mentor/tasks/batch, 멘티는 /api/v1/mentee/tasks/batch
       const body = {
-        menteeId,
         subject,
         goal,
         title,
@@ -131,7 +127,15 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
       };
       if (worksheetId) body.worksheetId = worksheetId;
 
-      const res = await createTaskBatch(token, mentorId, body);
+      let res;
+      if (isMentor) {
+        const mentorId = user.userId;
+        const menteeId = Number(selectedMenteeId);
+        body.menteeId = menteeId;
+        res = await createTaskBatch(token, mentorId, body);
+      } else {
+        res = await createMenteeTaskBatch(token, body);
+      }
       const payload = res.data ?? res;
       onTaskAdded?.(payload);
       onClose();

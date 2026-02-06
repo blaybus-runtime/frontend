@@ -5,17 +5,28 @@ import IncompleteFeedbackCard from "../../components/mentor/IncompleteFeedbackCa
 import WeeklyCalendar from "../../components/mentor/WeeklyCalendar";
 import AddMenteeModal from "../../components/mentor/AddMenteeModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMyMentees, createMentee } from "../../api/matching";
+import { getMyMentees, createMentee, getAllPendingFeedbacks } from "../../api/matching";
 
-const incompleteFeedbacks = [
-  { id: 1, mentee: "설이 멘티", subject: "영어", subjectColor: "rose", title: "단어암기", timeAgo: "12시간 전" },
-  { id: 2, mentee: "채영 멘티", subject: "국어", subjectColor: "emerald", title: "강지연 국어5P 듣기", timeAgo: "12시간 전" },
-  { id: 3, mentee: "채영 멘티", subject: "수학", subjectColor: "blue", title: "수학 오답노트", timeAgo: "11시간 전" },
-  { id: 4, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
-  { id: 5, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
-  { id: 6, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
-  { id: 7, mentee: "유나 멘티", subject: "수학", subjectColor: "blue", title: "단어암기", timeAgo: "방금 전" },
-];
+const subjectColorMap = {
+  "영어": "rose",
+  "국어": "emerald",
+  "수학": "blue",
+  "과학": "purple",
+};
+
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
+  const now = new Date();
+  const past = new Date(dateStr);
+  const diffMs = now - past;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "방금 전";
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}시간 전`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}일 전`;
+}
 
 function getToday() {
   const d = new Date();
@@ -29,6 +40,7 @@ export default function MentorMainPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mentees, setMentees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [feedbacks, setFeedbacks] = useState([]);
 
   const { token, user } = useAuth();
 
@@ -53,6 +65,24 @@ export default function MentorMainPage() {
         setMentees([]);
       })
       .finally(() => setLoading(false));
+
+    getAllPendingFeedbacks(token)
+      .then((res) => {
+        const list = res.data ?? res;
+        const items = (Array.isArray(list) ? list : []).map((f) => ({
+          id: f.taskId,
+          mentee: f.menteeName,
+          subject: f.subject,
+          subjectColor: subjectColorMap[f.subject] || "blue",
+          title: f.taskContent,
+          timeAgo: timeAgo(f.completedAt),
+        }));
+        setFeedbacks(items);
+      })
+      .catch((err) => {
+        console.error("미완료 피드백 조회 실패:", err);
+        setFeedbacks([]);
+      });
   }, [token]);
 
   const handleSaveMentee = async (formData) => {
@@ -148,9 +178,12 @@ export default function MentorMainPage() {
 
                 {/* 피드백 리스트 */}
                 <div className="p-4 space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
-                  {incompleteFeedbacks.map((f) => (
+                  {feedbacks.map((f) => (
                     <IncompleteFeedbackCard key={f.id} item={f} />
                   ))}
+                  {feedbacks.length === 0 && (
+                    <div className="text-sm text-gray-400 text-center py-4">미완료 피드백이 없습니다.</div>
+                  )}
                 </div>
               </div>
             </section>
