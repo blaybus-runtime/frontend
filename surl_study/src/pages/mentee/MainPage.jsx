@@ -203,18 +203,10 @@ export default function MainPage() {
       {showAddTask && (
         <AddTaskModal
           onClose={() => setShowAddTask(false)}
-          onTaskAdded={(data) => {
-            // API 응답의 tasks를 기존 목록에 추가
-            const newTasks = (data.tasks || []).map((t) => ({
-              id: t.taskId,
-              menteeId: data.menteeId,
-              tag: t.subject,
-              tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
-              title: t.title,
-              status: "피드백 대기",
-              done: false,
-            }));
-            setTasks((prev) => [...prev, ...newTasks]);
+          onTaskAdded={() => {
+            // 할일 생성 후 오늘의 할일 목록을 API에서 다시 불러오기
+            const today = new Date().toISOString().split("T")[0];
+            fetchDailyTasks(today);
           }}
         />
       )}
