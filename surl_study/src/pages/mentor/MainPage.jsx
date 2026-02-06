@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "../../components/common/Header";
 import MentorMenteeCard from "../../components/mentor/MenteeCard";
 import IncompleteFeedbackCard from "../../components/mentor/IncompleteFeedbackCard";
 import WeeklyCalendar from "../../components/mentor/WeeklyCalendar";
 import AddMenteeModal from "../../components/mentor/AddMenteeModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMyMentees, createMentee, getAllPendingFeedbacks } from "../../api/matching";
+import {
+  getMyMentees,
+  createMentee,
+  getPendingFeedbacksByDate,
+} from "../../api/matching";
 
 const subjectColorMap = {
   "영어": "rose",
@@ -28,62 +32,124 @@ function timeAgo(dateStr) {
   return `${diffDay}일 전`;
 }
 
-function getToday() {
-  const d = new Date();
+function formatDate(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// 이번 주 월~일 범위 계산
+function getWeekRange() {
+  const today = new Date();
+  const day = today.getDay(); // 0(일)~6(토)
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { startDate: formatDate(monday), endDate: formatDate(sunday) };
+}
+
 export default function MentorMainPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mentees, setMentees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [feedbacks, setFeedbacks] = useState([]);
+  const [allFeedbacks, setAllFeedbacks] = useState([]); // 전체 피드백 원본
+  const [weekFeedbacks, setWeekFeedbacks] = useState([]); // 이번 주 필터링된 피드백
 
   const { token, user } = useAuth();
 
+  // 피드백 응답 → UI 아이템 변환 헬퍼 (completedAt 원본도 보존)
+  const mapFeedbacks = (list) =>
+    (Array.isArray(list) ? list : []).map((f) => ({
+      id: f.taskId,
+      mentee: f.menteeName,
+      subject: f.subject,
+      subjectColor: subjectColorMap[f.subject] || "blue",
+      title: f.taskContent,
+      completedAt: f.completedAt,
+      timeAgo: timeAgo(f.completedAt),
+    }));
+
+  // 멘티 카드 목록 조회
+  const fetchMentees = useCallback(
+    (date) => {
+      if (!token) return;
+      getMyMentees(token, date)
+        .then((res) => {
+          const list = res.data.map((m) => ({
+            id: m.menteeId,
+            name: m.name,
+            avatar: m.profileImageUrl,
+            feedbackCount: m.unwrittenFeedbackCount ?? 0,
+          }));
+          setMentees(list);
+        })
+        .catch((err) => {
+          console.error("멘티 목록 조회 실패:", err);
+          setMentees([]);
+        })
+        .finally(() => setLoading(false));
+    },
+    [token]
+  );
+
+  // 이번 주 월~일 7일 각각 조회 → 합치기
+  const fetchWeekFeedbacks = useCallback(() => {
+    if (!token) return;
+
+    const { startDate } = getWeekRange();
+    const monday = new Date(startDate + "T00:00:00");
+
+    // 월~일 7일 날짜 배열 생성
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return formatDate(d);
+    });
+
+    // 7일 동시 조회
+    const requests = weekDates.map((date) =>
+      getPendingFeedbacksByDate(token, date)
+        .then((res) => {
+          const list = res.data ?? res;
+          return mapFeedbacks(list);
+        })
+        .catch(() => []) // 개별 날짜 실패 시 빈 배열
+    );
+
+    Promise.all(requests)
+      .then((results) => {
+        // 7일 결과 합치고 중복 제거 (taskId 기준)
+        const merged = results.flat();
+        const unique = [];
+        const seen = new Set();
+        for (const f of merged) {
+          if (!seen.has(f.id)) {
+            seen.add(f.id);
+            unique.push(f);
+          }
+        }
+        setAllFeedbacks(unique);
+        setWeekFeedbacks(unique);
+      })
+      .catch((err) => {
+        console.error("주간 미완료 피드백 조회 실패:", err);
+        setAllFeedbacks([]);
+        setWeekFeedbacks([]);
+      });
+  }, [token]);
+
+  // 초기 로드
   useEffect(() => {
     if (!token) {
       setLoading(false);
       return;
     }
-
-    getMyMentees(token, getToday())
-      .then((res) => {
-        const list = res.data.map((m) => ({
-          id: m.menteeId,
-          name: m.name,
-          avatar: m.profileImageUrl,
-          feedbackCount: m.unwrittenFeedbackCount ?? 0,
-        }));
-        setMentees(list);
-      })
-      .catch((err) => {
-        console.error("멘티 목록 조회 실패:", err);
-        setMentees([]);
-      })
-      .finally(() => setLoading(false));
-
-    getAllPendingFeedbacks(token)
-      .then((res) => {
-        const list = res.data ?? res;
-        const items = (Array.isArray(list) ? list : []).map((f) => ({
-          id: f.taskId,
-          mentee: f.menteeName,
-          subject: f.subject,
-          subjectColor: subjectColorMap[f.subject] || "blue",
-          title: f.taskContent,
-          timeAgo: timeAgo(f.completedAt),
-        }));
-        setFeedbacks(items);
-      })
-      .catch((err) => {
-        console.error("미완료 피드백 조회 실패:", err);
-        setFeedbacks([]);
-      });
-  }, [token]);
+    fetchMentees(formatDate(new Date()));
+    fetchWeekFeedbacks();
+  }, [token, fetchMentees, fetchWeekFeedbacks]);
 
   const handleSaveMentee = async (formData) => {
     try {
@@ -102,7 +168,6 @@ export default function MentorMainPage() {
       const res = await createMentee(token, body);
       const payload = res.data ?? res;
 
-      // 새 멘티를 목록에 추가
       setMentees((prev) => [
         ...prev,
         {
@@ -113,7 +178,6 @@ export default function MentorMainPage() {
         },
       ]);
 
-      // 생성된 계정 정보 알림
       alert(`멘티 계정이 생성되었습니다.\n아이디: ${payload.user.username}\n임시 비밀번호: ${payload.tempPassword}`);
     } catch (err) {
       console.error("멘티 생성 실패:", err);
@@ -129,7 +193,6 @@ export default function MentorMainPage() {
 
       <main className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8">
         <div className="mx-auto max-w-6xl">
-          {/* 본문 2열 레이아웃 */}
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
             {/* LEFT: 멘티 카드 그리드 */}
             <section>
@@ -149,7 +212,6 @@ export default function MentorMainPage() {
                     />
                   ))}
 
-                  {/* 멘티 추가 카드 */}
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -173,16 +235,18 @@ export default function MentorMainPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                {/* 주간 캘린더 */}
+                {/* 주간 캘린더 (표시 전용) */}
                 <WeeklyCalendar />
 
-                {/* 피드백 리스트 */}
+                {/* 이번 주 전체 피드백 리스트 */}
                 <div className="p-4 space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
-                  {feedbacks.map((f) => (
+                  {weekFeedbacks.map((f) => (
                     <IncompleteFeedbackCard key={f.id} item={f} />
                   ))}
-                  {feedbacks.length === 0 && (
-                    <div className="text-sm text-gray-400 text-center py-4">미완료 피드백이 없습니다.</div>
+                  {weekFeedbacks.length === 0 && (
+                    <div className="text-sm text-gray-400 text-center py-4">
+                      이번 주 미완료 피드백이 없습니다.
+                    </div>
                   )}
                 </div>
               </div>

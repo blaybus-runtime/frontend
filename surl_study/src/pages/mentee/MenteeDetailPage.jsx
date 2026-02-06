@@ -12,7 +12,7 @@ import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import CreateTodoModal from "../../components/mentor_detail/CreateTodoModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMenteeDailyPlan, getPendingFeedback } from "../../api/task";
+import { getMenteeDailyPlan } from "../../api/task";
 
 const mockMenteeById = {
   1: { id: 1, name: "설이 멘티", school: "달천고등학교 3학년", track: "수시전형" },
@@ -98,9 +98,14 @@ export default function MentorMenteeDetailPage() {
         feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
       }));
       setTodos(apiTodos);
+
+      // 선택된 날짜의 미완료 피드백: 과제 완료 + 피드백 미작성
+      const pending = apiTodos.filter((t) => t.taskDone && !t.feedbackDone);
+      setPendingFeedback(pending);
     } catch (err) {
       console.error("멘티 일일 할 일 API 호출 실패:", err);
       setTodos([]);
+      setPendingFeedback([]);
     } finally {
       setLoading(false);
     }
@@ -112,33 +117,6 @@ export default function MentorMenteeDetailPage() {
   }, [selectedDate, fetchDailyTodos]);
 
   const todosOfDay = todos;
-
-  // 전체 미완료 피드백을 별도 API로 조회
-  const fetchPendingFeedback = useCallback(async () => {
-    try {
-      const json = await getPendingFeedback(token, menteeId);
-      const list = json.data ?? json;
-      const items = (Array.isArray(list) ? list : []).map((t) => ({
-        id: t.taskId,
-        subject: t.subject,
-        type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
-        title: t.title || t.content,
-        desc: t.content || t.title,
-        date: t.date,
-        taskDone: true,
-        feedbackDone: false,
-      }));
-      setPendingFeedback(items);
-    } catch (err) {
-      console.error("미완료 피드백 API 호출 실패:", err);
-      setPendingFeedback([]);
-    }
-  }, [token, menteeId]);
-
-  // 페이지 로드 시 미완료 피드백 조회
-  useEffect(() => {
-    fetchPendingFeedback();
-  }, [fetchPendingFeedback]);
 
   const toggleTaskDone = (id) => {
     setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, taskDone: !t.taskDone } : t)));

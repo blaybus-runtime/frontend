@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router-dom";
 
-const colorMap = {
-  rose: { bg: "bg-rose-50", text: "text-rose-600" },
-  emerald: { bg: "bg-emerald-50", text: "text-emerald-600" },
-  blue: { bg: "bg-blue-50", text: "text-blue-600" },
-  purple: { bg: "bg-purple-50", text: "text-purple-600" },
-  amber: { bg: "bg-amber-50", text: "text-amber-600" },
+// 과목명 → 스타일 직접 매핑 (Tailwind JIT가 클래스를 감지할 수 있도록 전체 문자열 사용)
+const subjectStyleMap = {
+  "영어": "bg-rose-50 text-rose-600",
+  "국어": "bg-emerald-50 text-emerald-600",
+  "수학": "bg-blue-50 text-blue-600",
+  "과학": "bg-purple-50 text-purple-600",
 };
+const defaultStyle = "bg-gray-100 text-gray-600";
 
 export default function IncompleteFeedbackCard({ item }) {
-  const colors = colorMap[item.subjectColor] || colorMap.blue;
+  const badgeStyle = subjectStyleMap[item.subject] || defaultStyle;
   const navigate = useNavigate();
 
   return (
@@ -20,7 +21,7 @@ export default function IncompleteFeedbackCard({ item }) {
       <div className="min-w-0">
         <div className="text-sm font-semibold text-gray-900">{item.mentee}</div>
         <div className="mt-1 flex items-center gap-2">
-          <span className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold ${colors.bg} ${colors.text}`}>
+          <span className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold ${badgeStyle}`}>
             {item.subject}
           </span>
           <span className="text-sm text-gray-500 truncate">{item.title}</span>
