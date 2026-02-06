@@ -17,8 +17,6 @@ const SUBJECT_COLORS = {
   국어: "bg-amber-100 text-amber-700",
   영어: "bg-rose-100 text-rose-700",
   수학: "bg-emerald-100 text-emerald-700",
-  과학: "bg-sky-100 text-sky-700",
-  사회: "bg-purple-100 text-purple-700",
 };
 const DEFAULT_TAG_COLOR = "bg-gray-100 text-gray-700";
 
