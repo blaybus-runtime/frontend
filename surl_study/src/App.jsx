@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+//import { useState } from 'react'
+//import reactLogo from './assets/react.svg'
+//import viteLogo from '/vite.svg'
 
 // function App() {
 //   const [count, setCount] = useState(0)
@@ -25,6 +25,7 @@ import MentorMain from "./pages/mentor/MainPage";
 import TaskDetailPage from "./pages/mentee/TaskDetailPage";
 import FeedbackDetailPage from "./pages/mentor/FeedbackDetailPage";
 import CalendarPage from './pages/calender/CalendarPage';
+import MentorMenteeDetailPage from './pages/mentee/MenteeDetailPage';
 
 export default function App() {
   return (
@@ -40,6 +41,9 @@ export default function App() {
         {/* 멘토 페이지 (로그인 필수) */}
         <Route path="/mentor" element={<ProtectedRoute><MentorMain /></ProtectedRoute>} />
         <Route path="/mentor/feedback/:feedbackId" element={<ProtectedRoute><FeedbackDetailPage /></ProtectedRoute>} />
+
+        <Route path="/mentor/mentees/:menteeId" element={<MentorMenteeDetailPage />} />
+
       </Routes>
       </AuthProvider>
     </BrowserRouter>
