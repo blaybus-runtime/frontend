@@ -1,0 +1,32 @@
+export default function TodoRow({ item, subjectStyle, onToggleTask }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-col gap-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${subjectStyle.pill}`}>
+              {item.subject}
+            </span>
+            <span className="inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">
+              {item.type}
+            </span>
+          </div>
+          <div>
+            <span className="mt-2 px-0.8 text-sm font-semibold text-gray-900">{item.title}</span>
+            <span className="mx-2 text-gray-500">|</span>
+            <span className="mt-1 text-xs text-gray-500">{item.desc}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="mt-3 text-right text-xs text-gray-400">
+            {item.taskDone ? "과제 완료" : "과제 미완료"}
+          </div>
+          <div className="mt-3 text-right text-xs text-gray-400">
+            {item.taskDone ? "피드백 작성 가능" : "과제 완료 후 피드백"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
