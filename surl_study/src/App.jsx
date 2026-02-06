@@ -36,7 +36,7 @@ export default function App() {
         {/* 멘티 페이지 (로그인 필수) */}
         <Route path="/mentee" element={<ProtectedRoute><MenteeMain /></ProtectedRoute>} />
         <Route path="/mentee/task/:taskId" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
-        <Route path="/mentee/calender" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+        <Route path="/mentee/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
         {/* 멘토 페이지 (로그인 필수) */}
         <Route path="/mentor" element={<ProtectedRoute><MentorMain /></ProtectedRoute>} />
         <Route path="/mentor/feedback/:feedbackId" element={<ProtectedRoute><FeedbackDetailPage /></ProtectedRoute>} />

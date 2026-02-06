@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import MentorFeedback from "../../components/mentee/MentorFeedback";
@@ -49,6 +50,7 @@ const dummyTask = {
 };
 
 export default function TaskDetailPage() {
+  const { taskId } = useParams();
   const [task] = useState(dummyTask);
 
   return (
@@ -117,6 +119,7 @@ export default function TaskDetailPage() {
           <MentorFeedback
             feedback={task.feedback}
             comments={task.comments}
+            taskId={taskId}
           />
         </div>
       </main>

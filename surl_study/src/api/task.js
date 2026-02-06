@@ -82,3 +82,31 @@ export function recordStudyTime(token, body) {
     body,
   });
 }
+
+/**
+ * GET /api/v1/comments?taskId={taskId}
+ * 특정 task의 댓글 목록 조회
+ *
+ * 응답: { status, message, data: [{ commentId, taskId, authorId, authorName, content, createdAt }] }
+ */
+export function getComments(token, taskId) {
+  return apiClient(`/api/v1/comments?taskId=${taskId}`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
+ * POST /api/v1/comments
+ * 댓글 작성
+ *
+ * body: { taskId, content }
+ * 응답: { status, message, data: { commentId, taskId, authorId, authorName, content, createdAt } }
+ */
+export function createComment(token, body) {
+  return apiClient("/api/v1/comments", {
+    method: "POST",
+    token,
+    body,
+  });
+}

@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import MentorFeedback from "../../components/mentee/MentorFeedback";
+import { useAuth } from "../../context/AuthContext";
+import { getComments, createComment } from "../../api/task";
 
 // 더미 데이터 (실제로는 feedbackId로 API 조회)
 const dummyFeedbackData = {
@@ -211,7 +213,7 @@ export default function FeedbackDetailPage() {
             </div>
 
             {/* 댓글 입력 */}
-            <CommentSection comments={task.comments} />
+            <CommentSection comments={task.comments} taskId={feedbackId} />
           </section>
         </div>
       </main>
@@ -219,22 +221,89 @@ export default function FeedbackDetailPage() {
   );
 }
 
-function CommentSection({ comments }) {
+// 시간 포맷 헬퍼
+function formatTimeAgo(createdAt) {
+  if (!createdAt) return "";
+  const now = new Date();
+  const date = new Date(createdAt);
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "방금 전";
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}시간 전`;
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay}일 전`;
+}
+
+function CommentSection({ comments, taskId }) {
   const [newComment, setNewComment] = useState("");
   const [commentList, setCommentList] = useState(comments);
+  const [loading, setLoading] = useState(false);
+  const { token, user } = useAuth();
 
-  const handleSubmit = () => {
-    if (!newComment.trim()) return;
-    const comment = {
-      id: Date.now(),
-      author: "설이",
-      authorAvatar: null,
-      timeAgo: "방금 전",
-      content: newComment.trim(),
-      isReply: true,
-    };
-    setCommentList([...commentList, comment]);
-    setNewComment("");
+  // taskId가 있으면 API에서 댓글 조회
+  useEffect(() => {
+    if (!taskId || !token) return;
+
+    getComments(token, taskId)
+      .then((json) => {
+        const data = json.data ?? json;
+        if (Array.isArray(data)) {
+          const mapped = data.map((c) => ({
+            id: c.commentId,
+            author: c.writerName,
+            authorAvatar: c.writerProfileUrl ?? null,
+            timeAgo: formatTimeAgo(c.createdAt),
+            content: c.content,
+            isReply: true,
+          }));
+          setCommentList(mapped);
+        }
+      })
+      .catch((err) => {
+        console.error("댓글 조회 실패:", err);
+      });
+  }, [taskId, token]);
+
+  const handleSubmit = async () => {
+    if (!newComment.trim() || loading) return;
+
+    if (taskId && token) {
+      setLoading(true);
+      try {
+        const json = await createComment(token, {
+          taskId,
+          content: newComment.trim(),
+        });
+        const data = json.data ?? json;
+        const comment = {
+          id: data.commentId ?? Date.now(),
+          author: data.writerName ?? user?.name ?? "나",
+          authorAvatar: null,
+          timeAgo: formatTimeAgo(data.createdAt) || "방금 전",
+          content: data.content ?? newComment.trim(),
+          isReply: true,
+        };
+        setCommentList((prev) => [...prev, comment]);
+        setNewComment("");
+      } catch (err) {
+        console.error("댓글 작성 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      const comment = {
+        id: Date.now(),
+        author: user?.name ?? "나",
+        authorAvatar: null,
+        timeAgo: "방금 전",
+        content: newComment.trim(),
+        isReply: true,
+      };
+      setCommentList((prev) => [...prev, comment]);
+      setNewComment("");
+    }
   };
 
   return (
@@ -252,14 +321,14 @@ function CommentSection({ comments }) {
           />
           <button
             onClick={handleSubmit}
-            disabled={!newComment.trim()}
+            disabled={!newComment.trim() || loading}
             className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition"
             style={{
-              backgroundColor: newComment.trim() ? "#6D87ED" : "#D1D5DB",
-              cursor: newComment.trim() ? "pointer" : "not-allowed",
+              backgroundColor: newComment.trim() && !loading ? "#6D87ED" : "#D1D5DB",
+              cursor: newComment.trim() && !loading ? "pointer" : "not-allowed",
             }}
           >
-            등록
+            {loading ? "등록 중..." : "등록"}
           </button>
         </div>
       </div>

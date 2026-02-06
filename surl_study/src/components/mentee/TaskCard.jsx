@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { updateTaskStatus } from "../../api/task";
 
@@ -6,6 +7,7 @@ export default function TaskCard({ task, onStatusChange }) {
   const [done, setDone] = useState(task.done);
   const [loading, setLoading] = useState(false);
   const { token, user } = useAuth();
+  const navigate = useNavigate();
 
   const handleToggle = async () => {
     if (loading) return;
@@ -29,7 +31,10 @@ export default function TaskCard({ task, onStatusChange }) {
   const statusText = done ? "피드백 완료" : task.status || "피드백 대기";
 
   return (
-    <div className="w-full rounded-xl border border-gray-200 bg-white px-5 py-4">
+    <div
+      className="w-full rounded-xl border border-gray-200 bg-white px-5 py-4 cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => navigate(`/mentee/task/${task.id}`)}
+    >
       <div className="flex items-start justify-between gap-4">
         {/* Left */}
         <div className="min-w-0">
@@ -48,7 +53,7 @@ export default function TaskCard({ task, onStatusChange }) {
         <div className="flex flex-col items-end gap-2">
           {/* checkbox (top-right) */}
           <button
-            onClick={handleToggle}
+            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
             disabled={loading}
             className={`flex h-6.5 w-6.5 items-center justify-center rounded-md border cursor-pointer transition-colors ${
               done

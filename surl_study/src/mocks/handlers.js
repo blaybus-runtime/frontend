@@ -6,7 +6,26 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 /**
  * In-memory DB (새로고침하면 초기화됨)
  */
+let commentIdCounter = 1;
 const db = {
+  comments: [
+    {
+      commentId: commentIdCounter++,
+      taskId: 1,
+      authorId: 100,
+      authorName: "홍길동",
+      content: "네 확실히 오답노트 쓰니까 이해가 되는 것 같아요!\n다음 시간까지 암기해오겠습니다.",
+      createdAt: new Date(Date.now() - 10 * 60000).toISOString(),
+    },
+    {
+      commentId: commentIdCounter++,
+      taskId: 1,
+      authorId: 7,
+      authorName: "설이쌤",
+      content: "화이팅~!!",
+      createdAt: new Date(Date.now() - 1 * 60000).toISOString(),
+    },
+  ],
   mentor: {
     userId: 7,
     username: "mentor01",
@@ -369,6 +388,70 @@ export const handlers = [
           createdAt: new Date().toISOString(),
         },
       },
+      { status: 200 }
+    );
+  }),
+
+  /**
+   * GET /api/v1/comments?taskId={taskId}
+   * 특정 task의 댓글 목록 조회
+   */
+  http.get(`${API_BASE_URL}/api/v1/comments`, async ({ request }) => {
+    await delay(200);
+
+    const url = new URL(request.url);
+    const taskId = Number(url.searchParams.get("taskId"));
+
+    const comments = db.comments.filter((c) => c.taskId === taskId);
+
+    return HttpResponse.json(
+      { status: 200, message: "Success", data: comments },
+      { status: 200 }
+    );
+  }),
+
+  /**
+   * POST /api/v1/comments
+   * 댓글 작성
+   * body: { taskId, content }
+   */
+  http.post(`${API_BASE_URL}/api/v1/comments`, async ({ request }) => {
+    await delay(300);
+
+    const token = getBearerToken(request);
+    const role = token ? tokenToRole(token) : null;
+
+    if (!token || !role) {
+      return HttpResponse.json(
+        { status: 401, message: "Unauthorized", data: null },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { taskId, content } = body || {};
+
+    if (!taskId || !content) {
+      return HttpResponse.json(
+        { status: 400, message: "taskId와 content는 필수입니다.", data: null },
+        { status: 400 }
+      );
+    }
+
+    const author = role === "MENTOR" ? db.mentor : db.mentee;
+    const newComment = {
+      commentId: commentIdCounter++,
+      taskId: Number(taskId),
+      authorId: author.userId,
+      authorName: author.name,
+      content,
+      createdAt: new Date().toISOString(),
+    };
+
+    db.comments.push(newComment);
+
+    return HttpResponse.json(
+      { status: 200, message: "Success", data: newComment },
       { status: 200 }
     );
   }),
