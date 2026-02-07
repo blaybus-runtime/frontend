@@ -1,48 +1,15 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import { useAuth } from "../../context/AuthContext";
-import { getComments, createComment } from "../../api/task";
+import { getFeedback, createFeedback, updateFeedback, deleteFeedback, getComments, createComment } from "../../api/task";
 
-// 더미 데이터 (실제로는 feedbackId로 API 조회)
-const dummyFeedbackData = {
-  1: {
-    id: 1,
-    menteeName: "설이 멘티",
-    subject: "영어",
-    subjectColor: "bg-rose-100 text-rose-700",
-    teacherName: "강지연 국어",
-    taskTitle: "강지연 국어 5P 풀기",
-    learningContent: {
-      activeTab: "학습 내용 공유",
-      attachments: [
-        { id: 1, type: "image", url: "/placeholder1.jpg" },
-        { id: 2, type: "image", url: "/placeholder2.jpg" },
-        { id: 3, type: "image", url: "/placeholder3.jpg" },
-        { id: 4, type: "image", url: "/placeholder4.jpg" },
-        { id: 5, type: "image", url: "/placeholder5.jpg" },
-      ],
-    },
-    feedback: null, // 아직 피드백 미작성
-  },
-  2: {
-    id: 2,
-    menteeName: "채영 멘티",
-    subject: "국어",
-    subjectColor: "bg-emerald-100 text-emerald-700",
-    teacherName: "강지연 국어",
-    taskTitle: "강지연 국어 5P 풀기",
-    learningContent: {
-      activeTab: "학습 내용 공유",
-      attachments: [
-        { id: 1, type: "image", url: "/placeholder1.jpg" },
-        { id: 2, type: "image", url: "/placeholder2.jpg" },
-        { id: 3, type: "image", url: "/placeholder3.jpg" },
-      ],
-    },
-    feedback: null,
-  },
+// 과목별 태그 색상 매핑
+const SUBJECT_COLORS = {
+  국어: "bg-amber-100 text-amber-700",
+  영어: "bg-rose-100 text-rose-700",
+  수학: "bg-emerald-100 text-emerald-700",
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -65,39 +32,115 @@ function formatTimeAgo(createdAt) {
 export default function FeedbackDetailPage() {
   const { feedbackId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { token, user } = useAuth();
-  const data = dummyFeedbackData[feedbackId] || dummyFeedbackData[2];
-  const [task] = useState(data);
+  const taskFromState = location.state?.task;
+
+  // navigate state에서 task 정보 구성
+  const subject = taskFromState?.subject || "";
+  const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
+
+  const [task] = useState({
+    id: feedbackId,
+    subject,
+    subjectColor,
+    teacherName: taskFromState?.title || "",
+    taskTitle: taskFromState?.goal ? `${taskFromState.desc || taskFromState.title} | ${taskFromState.goal}` : (taskFromState?.desc || ""),
+    learningContent: {
+      activeTab: "학습 내용 공유",
+      attachments: [],
+    },
+  });
+
   const [showMenu, setShowMenu] = useState(false);
 
-  // 피드백 상태
-  const [feedback, setFeedback] = useState(task.feedback); // null이면 미작성
+  // 피드백 상태: API에서 조회
+  const [feedback, setFeedback] = useState(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
-  // 피드백 작성 핸들러
+  // 피드백 API 조회
+  useEffect(() => {
+    if (!feedbackId || !token) return;
+
+    getFeedback(token, feedbackId)
+      .then((json) => {
+        const data = json.data ?? json;
+        if (data && data.content) {
+          setFeedback({
+            mentorName: data.mentorName ?? data.writerName ?? user?.name ?? "멘토",
+            mentorAvatar: data.mentorProfileUrl ?? data.writerProfileUrl ?? null,
+            timeAgo: formatTimeAgo(data.createdAt),
+            content: data.content,
+            files: data.files ?? [],
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("피드백 조회 실패:", err);
+        // 피드백이 없으면 null 유지 → 작성 폼 표시
+      });
+  }, [feedbackId, token]);
+
+  // 수정 모드
+  const [isEditing, setIsEditing] = useState(false);
+
+  // 피드백 작성 핸들러 (POST)
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim() || feedbackLoading) return;
     setFeedbackLoading(true);
 
     try {
-      // 실제 API 연결 시: POST /api/v1/feedbacks
-      // 현재는 로컬로 처리
-      const newFeedback = {
-        mentorName: user?.name ?? "멘토",
-        mentorAvatar: null,
-        timeAgo: "방금 전",
-        content: feedbackText.trim(),
-        files: uploadedFiles,
-      };
-      setFeedback(newFeedback);
+      const rawFiles = uploadedFiles.map((f) => f.file).filter(Boolean);
+      const json = await createFeedback(token, feedbackId, { content: feedbackText.trim(), files: rawFiles });
+      const data = json.data ?? json;
+      setFeedback({
+        mentorName: data.mentorName ?? data.writerName ?? user?.name ?? "멘토",
+        mentorAvatar: data.mentorProfileUrl ?? data.writerProfileUrl ?? null,
+        timeAgo: formatTimeAgo(data.createdAt) || "방금 전",
+        content: data.content ?? feedbackText.trim(),
+        files: data.files ?? [],
+      });
       setFeedbackText("");
       setUploadedFiles([]);
     } catch (err) {
       console.error("피드백 작성 실패:", err);
     } finally {
       setFeedbackLoading(false);
+    }
+  };
+
+  // 피드백 수정 핸들러 (PUT)
+  const handleFeedbackUpdate = async () => {
+    if (!feedbackText.trim() || feedbackLoading) return;
+    setFeedbackLoading(true);
+
+    try {
+      const json = await updateFeedback(token, feedbackId, { content: feedbackText.trim() });
+      const data = json.data ?? json;
+      setFeedback({
+        ...feedback,
+        content: data.content ?? feedbackText.trim(),
+        timeAgo: formatTimeAgo(data.createdAt) || feedback.timeAgo,
+      });
+      setFeedbackText("");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("피드백 수정 실패:", err);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // 피드백 삭제 핸들러 (DELETE)
+  const handleFeedbackDelete = async () => {
+    try {
+      await deleteFeedback(token, feedbackId);
+      setFeedback(null);
+      setFeedbackText("");
+    } catch (err) {
+      console.error("피드백 삭제 실패:", err);
     }
   };
 
@@ -269,7 +312,11 @@ export default function FeedbackDetailPage() {
                     {showMenu && (
                       <div className="absolute right-0 top-full mt-1 w-28 rounded-lg border border-gray-200 bg-white py-1 shadow-lg z-10">
                         <button
-                          onClick={() => setShowMenu(false)}
+                          onClick={() => {
+                            setShowMenu(false);
+                            setFeedbackText(feedback.content);
+                            setIsEditing(true);
+                          }}
                           className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -278,7 +325,7 @@ export default function FeedbackDetailPage() {
                           수정
                         </button>
                         <button
-                          onClick={() => { setShowMenu(false); setFeedback(null); }}
+                          onClick={() => { setShowMenu(false); handleFeedbackDelete(); }}
                           className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -320,6 +367,40 @@ export default function FeedbackDetailPage() {
                     </div>
                   )}
                 </div>
+
+                {/* 수정 모드 */}
+                {isEditing && (
+                  <div className="mt-4 rounded-2xl bg-white p-6 shadow-sm">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <textarea
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        placeholder="피드백을 수정해주세요."
+                        rows={5}
+                        className="w-full resize-none bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
+                      />
+                    </div>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        onClick={() => { setIsEditing(false); setFeedbackText(""); }}
+                        className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={handleFeedbackUpdate}
+                        disabled={!feedbackText.trim() || feedbackLoading}
+                        className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition"
+                        style={{
+                          backgroundColor: feedbackText.trim() && !feedbackLoading ? "#6D87ED" : "#D1D5DB",
+                          cursor: feedbackText.trim() && !feedbackLoading ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        {feedbackLoading ? "수정 중..." : "수정 완료"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* 댓글 영역 */}
                 <div className="mt-6 flex items-center gap-2 px-1">
