@@ -10,7 +10,7 @@ import WeekStrip from "../../components/mentor_detail/WeekStrip";
 import TodoRow from "../../components/mentor_detail/TodoRow";
 import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
-import CreateTodoModal from "../../components/mentor_detail/CreateTodoModal";
+import AddTaskModal from "../../components/mentee/AddTaskModal";
 import { useAuth } from "../../context/AuthContext";
 import { getMenteeDailyPlan } from "../../api/task";
 
@@ -203,7 +203,10 @@ export default function MentorMenteeDetailPage() {
                   <WeekStrip selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
                   <div className="rounded-lg !border !border-gray-200 border border-none bg-white px-4 mt-4">
-                    <button className="w-full !bg-white py-3 text-sm font-semibold text-gray-600 hover:bg-gray-100">
+                    <button
+                      onClick={() => setOpenCreate(true)}
+                      className="w-full !bg-white py-3 text-sm font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer"
+                    >
                       + 할일 추가하기
                     </button>
                   </div>
@@ -247,16 +250,15 @@ export default function MentorMenteeDetailPage() {
             </section>
           </div>
       </main>
-      <CreateTodoModal
-        open={openCreate}
-        onClose={() => setOpenCreate(false)}
-        onSubmit={(payload) => {
-          console.log("새 할일 payload:", payload);
-          setOpenCreate(false);
-          // 할일 생성 후 현재 날짜 데이터를 API에서 다시 불러오기
-          fetchDailyTodos(selectedDate);
-        }}
-      />
+      {openCreate && (
+        <AddTaskModal
+          fixedMenteeId={Number(menteeId)}
+          onClose={() => setOpenCreate(false)}
+          onTaskAdded={() => {
+            fetchDailyTodos(selectedDate);
+          }}
+        />
+      )}
 
     </div>
   );

@@ -20,7 +20,7 @@ function getWeekRange() {
   return { startDate: fmt(monday), endDate: fmt(sunday) };
 }
 
-export default function AddTaskModal({ onClose, onTaskAdded }) {
+export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
   const { token, user } = useAuth();
 
   const [subject, setSubject] = useState("");
@@ -37,7 +37,7 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
 
   // 멘토용: 멘티 목록 & 선택된 멘티
   const [mentees, setMentees] = useState([]);
-  const [selectedMenteeId, setSelectedMenteeId] = useState("");
+  const [selectedMenteeId, setSelectedMenteeId] = useState(fixedMenteeId ? String(fixedMenteeId) : "");
   const isMentor = user?.role === "MENTOR";
 
   const today = new Date().toISOString().split("T")[0];
@@ -137,11 +137,6 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
       }
 
       // 2) 백엔드 요청 body 구성
-      //    files: @NotEmpty → 파일 없으면 worksheetId=null 더미 1개
-      const filesPayload = uploadedFiles.length > 0
-        ? uploadedFiles
-        : [{ worksheetId: null, weekdays: null }];
-
       // 선택한 요일에 맞게 이번 주 월~일 범위로 task 생성
       const { startDate, endDate } = getWeekRange();
 
@@ -151,16 +146,15 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
         title,
         startDate,
         endDate,
-        weekdays: selectedDays,   // 백엔드 필드명: weekdays (days ❌)
-        files: filesPayload,      // 백엔드: [{ worksheetId, weekdays }]
+        weekdays: selectedDays,
+        files: uploadedFiles,
       };
 
       let res;
       if (isMentor) {
-        const mentorId = user.userId;
         const menteeId = Number(selectedMenteeId);
         body.menteeId = menteeId;
-        res = await createTaskBatch(token, mentorId, body);
+        res = await createTaskBatch(token, body);
       } else {
         res = await createMenteeTaskBatch(token, body);
       }
@@ -195,8 +189,8 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* 멘토용: 멘티 선택 */}
-          {isMentor && (
+          {/* 멘토용: 멘티 선택 (fixedMenteeId가 있으면 숨김) */}
+          {isMentor && !fixedMenteeId && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">멘티 선택</label>
               <select

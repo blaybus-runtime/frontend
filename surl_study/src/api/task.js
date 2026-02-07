@@ -41,14 +41,14 @@ export function getPendingFeedback(token, menteeId) {
 }
 
 /**
- * POST /api/v1/mentor/tasks/batch?mentorId={mentorId}
+ * POST /api/v1/mentor/tasks/batch
  * 멘토가 멘티에게 할일을 일괄 생성
  *
- * body: { menteeId, subject, goal, title, startDate, endDate, worksheetId? }
+ * body: { menteeId, subject, goal, title, startDate, endDate, weekdays, files }
  * 응답: { data: { menteeId, createdCount, tasks: [{ taskId, date, subject, goal, title, status, createdBy }] } }
  */
-export function createTaskBatch(token, mentorId, body) {
-  return apiClient(`/api/v1/mentor/tasks/batch?mentorId=${mentorId}`, {
+export function createTaskBatch(token, body) {
+  return apiClient(`/api/v1/mentor/tasks/batch`, {
     method: "POST",
     token,
     body,
