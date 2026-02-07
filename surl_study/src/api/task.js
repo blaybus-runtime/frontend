@@ -175,6 +175,19 @@ export function recordStudyTime(token, body) {
 }
 
 /**
+ * GET /api/v1/assignments/{taskId}/feedback
+ * 특정 task의 멘토 피드백 조회
+ *
+ * 응답: { status, message, data: { feedbackId, mentorName, content, createdAt, ... } }
+ */
+export function getFeedback(token, taskId) {
+  return apiClient(`/api/v1/assignments/${taskId}/feedback`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
  * GET /api/v1/comments?taskId={taskId}
  * 특정 task의 댓글 목록 조회
  *
