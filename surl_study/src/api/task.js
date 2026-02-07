@@ -175,14 +175,73 @@ export function recordStudyTime(token, body) {
 }
 
 /**
- * GET /api/v1/assignments/{taskId}/feedback
+ * GET /api/v1/assignments/{assignmentId}/feedback
  * 특정 task의 멘토 피드백 조회
- *
- * 응답: { status, message, data: { feedbackId, mentorName, content, createdAt, ... } }
  */
-export function getFeedback(token, taskId) {
-  return apiClient(`/api/v1/assignments/${taskId}/feedback`, {
+export function getFeedback(token, assignmentId) {
+  return apiClient(`/api/v1/assignments/${assignmentId}/feedback`, {
     method: "GET",
+    token,
+  });
+}
+
+/**
+ * POST /api/v1/assignments/{assignmentId}/feedback
+ * 멘토 피드백 작성 (multipart/form-data)
+ *
+ * form fields: content (string, required), files (optional)
+ */
+export async function createFeedback(token, assignmentId, { content, files }) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+  const formData = new FormData();
+  formData.append("content", content);
+  if (files && files.length > 0) {
+    files.forEach((f) => formData.append("files", f));
+  }
+
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/assignments/${assignmentId}/feedback`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    const err = new Error(json.message || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.data = json;
+    throw err;
+  }
+
+  return json;
+}
+
+/**
+ * PUT /api/v1/assignments/{assignmentId}/feedback
+ * 멘토 피드백 수정
+ *
+ * body: { content }
+ */
+export function updateFeedback(token, assignmentId, body) {
+  return apiClient(`/api/v1/assignments/${assignmentId}/feedback`, {
+    method: "PUT",
+    token,
+    body,
+  });
+}
+
+/**
+ * DELETE /api/v1/assignments/{assignmentId}/feedback
+ * 멘토 피드백 삭제
+ */
+export function deleteFeedback(token, assignmentId) {
+  return apiClient(`/api/v1/assignments/${assignmentId}/feedback`, {
+    method: "DELETE",
     token,
   });
 }

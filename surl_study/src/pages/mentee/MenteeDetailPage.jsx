@@ -93,6 +93,7 @@ export default function MentorMenteeDetailPage() {
         type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
         title: t.title || t.content,
         desc: t.content || t.title,
+        goal: t.goal || "",
         date: date,
         taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
         feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,

@@ -1,6 +1,13 @@
+import { useNavigate } from "react-router-dom";
+
 export default function TodoRow({ item, subjectStyle, onToggleTask }) {
+  const navigate = useNavigate();
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div
+      className="rounded-xl border border-gray-200 bg-white p-4 cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => navigate(`/mentor/feedback/${item.id}`, { state: { task: item } })}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-col gap-4">
           <div className="flex items-center gap-1.5 mb-3">
@@ -13,8 +20,18 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
           </div>
           <div>
             <span className="mt-2 px-0.8 text-sm font-semibold text-gray-900">{item.title}</span>
-            <span className="mx-2 text-gray-500">|</span>
-            <span className="mt-1 text-xs text-gray-500">{item.desc}</span>
+            {item.desc && (
+              <>
+                <span className="mx-2 text-gray-500">|</span>
+                <span className="mt-1 text-xs text-gray-500">{item.desc}</span>
+              </>
+            )}
+            {item.goal && (
+              <>
+                <span className="mx-2 text-gray-500">|</span>
+                <span className="mt-1 text-xs text-gray-500">{item.goal}</span>
+              </>
+            )}
           </div>
         </div>
 
