@@ -11,11 +11,6 @@ const SUBJECT_COLORS = {
   수학: "bg-emerald-100 text-emerald-700",
 };
 
-const dummyLearningContent = {
-  activeTab: "학습 내용 공유",
-  attachments: [],
-};
-
 export default function TaskDetailPage() {
   const { taskId } = useParams();
   const location = useLocation();
@@ -27,13 +22,19 @@ export default function TaskDetailPage() {
   const taskTitle = taskFromState?.taskTitle || "";
   const goal = taskFromState?.goal || "";
   const content = taskFromState?.title || "";
+  const worksheets = taskFromState?.worksheets || [];
+
+  const learningContent = {
+    activeTab: "학습 내용 공유",
+    attachments: worksheets,
+  };
 
   const [task] = useState({
     subject,
     subjectColor,
     teacherName: `${taskTitle}`,
     taskTitle: goal ? `${subject} ${goal}` : content,
-    learningContent: dummyLearningContent,
+    learningContent,
   });
 
   return (

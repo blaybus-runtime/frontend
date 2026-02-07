@@ -12,7 +12,7 @@ import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMenteeDailyPlan } from "../../api/task";
+import { getMenteeDailyPlan, getStudyDaily } from "../../api/task";
 
 const mockMenteeById = {
   1: { id: 1, name: "설이 멘티", school: "달천고등학교 3학년", track: "수시전형" },
@@ -79,25 +79,51 @@ export default function MentorMenteeDetailPage() {
   const [memos, setMemos] = useState(initialMemos);
   const [openCreate, setOpenCreate] = useState(false);
 
-  // API에서 할 일 데이터 조회
+  // API에서 할 일 데이터 조회 (멘토 API + study/daily API로 worksheet 병합)
   const fetchDailyTodos = useCallback(async (date) => {
     setLoading(true);
     try {
-      const json = await getMenteeDailyPlan(token, menteeId, date);
-      // 응답: { data: [ { taskId, title, content, subject, taskType, isTaskCompleted, isFeedbackCompleted } ] }
+      // 멘토 API와 study/daily API를 병렬 호출
+      const [json, studyJson] = await Promise.all([
+        getMenteeDailyPlan(token, menteeId, date),
+        getStudyDaily(token, menteeId, date).catch(() => null),
+      ]);
+
+      // study/daily에서 worksheet 맵 구성 (taskId → worksheets[])
+      const worksheetMap = {};
+      if (studyJson) {
+        const studyData = studyJson.data ?? studyJson;
+        const studyTodos = studyData.todos ?? (Array.isArray(studyData) ? studyData : []);
+        for (const t of studyTodos) {
+          const tid = t.id ?? t.taskId;
+          if (tid && t.worksheets?.length > 0) {
+            worksheetMap[tid] = t.worksheets.map((w) => ({
+              worksheetId: w.worksheetId,
+              title: w.title,
+              subject: w.subject,
+              fileUrl: w.fileUrl,
+            }));
+          }
+        }
+      }
+
       const list = json.data ?? json;
       const tasks = Array.isArray(list) ? list : (list.todos ?? []);
-      const apiTodos = tasks.map((t) => ({
-        id: t.taskId ?? t.id,
-        subject: t.subject,
-        type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
-        title: t.title || t.content,
-        desc: t.content || t.title,
-        goal: t.goal || "",
-        date: date,
-        taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
-        feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
-      }));
+      const apiTodos = tasks.map((t) => {
+        const tid = t.taskId ?? t.id;
+        return {
+          id: tid,
+          subject: t.subject,
+          type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
+          title: t.title || t.content,
+          desc: t.content || t.title,
+          goal: t.goal || "",
+          date: date,
+          taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
+          feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
+          worksheets: worksheetMap[tid] || [],
+        };
+      });
       setTodos(apiTodos);
 
       // 선택된 날짜의 미완료 피드백: 과제 완료 + 피드백 미작성

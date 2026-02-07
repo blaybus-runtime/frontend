@@ -33,6 +33,27 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
               </>
             )}
           </div>
+
+          {item.worksheets && item.worksheets.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {item.worksheets.map((w) => (
+                <a
+                  key={w.worksheetId}
+                  href={w.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  {w.title || "학습지"}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

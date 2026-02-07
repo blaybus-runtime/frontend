@@ -86,6 +86,12 @@ export default function MainPage() {
         subject: t.subject,
         taskTitle: t.title,
         goal: t.goal,
+        worksheets: (t.worksheets ?? []).map((w) => ({
+          worksheetId: w.worksheetId,
+          title: w.title,
+          subject: w.subject,
+          fileUrl: w.fileUrl,
+        })),
       }));
       setTasks(mapped);
     } catch (err) {
