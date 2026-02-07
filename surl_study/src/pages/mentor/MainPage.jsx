@@ -152,19 +152,27 @@ export default function MentorMainPage() {
   }, [token, fetchMentees, fetchWeekFeedbacks]);
 
   const handleSaveMentee = async (formData) => {
+    // 필수 필드 검증 (DB에서 nullable = false)
+    if (!formData.name?.trim()) {
+      alert("이름을 입력해주세요.");
+      return;
+    }
+
     try {
       const body = {
-        name: formData.name,
+        name: formData.name.trim(),
         menteeProfile: {
-          phoneNumber: formData.phone,
-          email: formData.email,
-          highSchool: formData.school,
+          phoneNumber: formData.phone?.trim() || "미입력",
+          email: formData.email?.trim() || "미입력",
+          highSchool: formData.school?.trim() || "미입력",
           grade: Number(formData.grade) || 1,
-          subjects: [],
+          targetUniv: "",
+          subjects: formData.examTypes?.length > 0 ? formData.examTypes : ["미정"],
           messageToMentor: "",
         },
       };
 
+      console.log("멘티 생성 요청 body:", JSON.stringify(body, null, 2));
       const res = await createMentee(token, body);
       const payload = res.data ?? res;
 
@@ -181,7 +189,9 @@ export default function MentorMainPage() {
       alert(`멘티 계정이 생성되었습니다.\n아이디: ${payload.user.username}\n임시 비밀번호: ${payload.tempPassword}`);
     } catch (err) {
       console.error("멘티 생성 실패:", err);
-      alert("멘티 생성에 실패했습니다. 다시 시도해주세요.");
+      console.error("서버 응답:", err.data);
+      const serverMsg = err.data?.message || err.message || "알 수 없는 오류";
+      alert(`멘티 생성에 실패했습니다.\n원인: ${serverMsg}`);
     }
 
     setIsModalOpen(false);
