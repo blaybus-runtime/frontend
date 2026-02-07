@@ -21,10 +21,10 @@ export default function IncompleteFeedbackCard({ item }) {
       <div className="min-w-0">
         <div className="text-sm font-semibold text-gray-900">{item.mentee}</div>
         <div className="mt-1 flex items-center gap-2">
-          <span className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold ${badgeStyle}`}>
+          <span className={`shrink-0 inline-flex rounded px-2 py-0.5 text-xs font-semibold ${badgeStyle}`}>
             {item.subject}
           </span>
-          <span className="text-sm text-gray-500 truncate">{item.title}</span>
+          <span className="text-sm text-gray-500 truncate min-w-0">{item.title}</span>
         </div>
       </div>
       <span className="ml-4 shrink-0 text-xs text-gray-400">{item.timeAgo}</span>

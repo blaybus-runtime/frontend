@@ -1,34 +1,10 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { updateTaskStatus } from "../../api/task";
 
-export default function TaskCard({ task, onStatusChange }) {
-  const [done, setDone] = useState(task.done);
-  const [loading, setLoading] = useState(false);
-  const { token, user } = useAuth();
+export default function TaskCard({ task }) {
   const navigate = useNavigate();
 
-  const handleToggle = async () => {
-    if (loading) return;
-    setLoading(true);
-
-    const newStatus = !done;
-
-    try {
-      // task.menteeId가 있으면 사용, 없으면 로그인 유저 ID 폴백
-      const menteeId = task.menteeId ?? user.userId;
-      await updateTaskStatus(token, task.id, menteeId, newStatus);
-      setDone(newStatus);
-      onStatusChange?.(task.id, newStatus);
-    } catch (err) {
-      console.error("상태 변경 실패:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const statusText = done ? "피드백 완료" : task.status || "피드백 대기";
+  const feedbackDone = task.feedbackDone ?? false;
+  const statusText = feedbackDone ? "피드백 완료" : "피드백 대기";
 
   return (
     <div
@@ -70,27 +46,10 @@ export default function TaskCard({ task, onStatusChange }) {
           )}
         </div>
 
-        {/* Right */}
-        <div className="flex flex-col items-end gap-2">
-          {/* checkbox (top-right) */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
-            disabled={loading}
-            className={`flex h-6.5 w-6.5 items-center justify-center rounded-md border cursor-pointer transition-colors ${
-              done
-                ? "border-indigo-200 !bg-[#8CA3FF] text-indigo-600"
-                : "border-gray-200 !bg-[#CACEDA] text-gray-300"
-            } ${loading ? "opacity-50" : ""}`}
-            aria-label="완료 체크"
-          >
-            <svg width="17" height="12" viewBox="0 0 17 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fillRule="evenodd" clipRule="evenodd" d="M15.6917 0.352908C15.9174 0.578686 16.0442 0.884866 16.0442 1.20412C16.0442 1.52337 15.9174 1.82955 15.6917 2.05532L6.66754 11.0795C6.54828 11.1988 6.4067 11.2934 6.25087 11.358C6.09504 11.4225 5.92802 11.4557 5.75934 11.4557C5.59067 11.4557 5.42365 11.4225 5.26782 11.358C5.11199 11.2934 4.9704 11.1988 4.85115 11.0795L0.367558 6.5967C0.252567 6.48564 0.160846 6.35279 0.0977467 6.2059C0.0346477 6.05901 0.00143462 5.90102 4.54579e-05 5.74116C-0.0013437 5.5813 0.0291189 5.42276 0.0896557 5.2748C0.150192 5.12683 0.239591 4.99241 0.352635 4.87936C0.465679 4.76632 0.600105 4.67692 0.748069 4.61639C0.896032 4.55585 1.05457 4.52539 1.21443 4.52677C1.3743 4.52816 1.53228 4.56138 1.67917 4.62448C1.82606 4.68758 1.95891 4.7793 2.06997 4.89429L5.75894 8.58326L13.9885 0.352908C14.1003 0.241027 14.2331 0.152274 14.3792 0.0917206C14.5253 0.0311671 14.6819 0 14.8401 0C14.9983 0 15.1549 0.0311671 15.301 0.0917206C15.4471 0.152274 15.5799 0.241027 15.6917 0.352908Z" fill="#EBF8FF"/>
-            </svg>
-          </button>
-
-          {/* status (bottom-right) */}
+        {/* Right - 피드백 상태만 표시 */}
+        <div className="flex flex-col items-end justify-center">
           <div className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
-            done
+            feedbackDone
                 ? "!text-[#8CA3FF]"
                 : "!text-[#CACEDA]"
           }`}>

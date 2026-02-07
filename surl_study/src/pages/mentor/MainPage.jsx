@@ -52,16 +52,19 @@ function getWeekRange() {
 }
 
 export default function MentorMainPage() {
+  const todayStr = formatDate(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mentees, setMentees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [allFeedbacks, setAllFeedbacks] = useState([]); // 전체 피드백 원본
   const [weekFeedbacks, setWeekFeedbacks] = useState([]); // 이번 주 필터링된 피드백
+  const [selectedDate, setSelectedDate] = useState(todayStr); // 캘린더 선택 날짜
+  const [displayFeedbacks, setDisplayFeedbacks] = useState([]); // 선택 날짜 or 전체
 
   const { token, user } = useAuth();
 
-  // 피드백 응답 → UI 아이템 변환 헬퍼 (completedAt 원본도 보존)
-  const mapFeedbacks = (list) =>
+  // 피드백 응답 → UI 아이템 변환 헬퍼 (completedAt 원본도 보존, date로 날짜 태깅)
+  const mapFeedbacks = (list, date) =>
     (Array.isArray(list) ? list : []).map((f) => ({
       id: f.taskId,
       mentee: f.menteeName,
@@ -70,6 +73,7 @@ export default function MentorMainPage() {
       title: f.taskContent,
       completedAt: f.completedAt,
       timeAgo: timeAgo(f.completedAt),
+      date, // 어느 날짜에 속하는 피드백인지
     }));
 
   // 멘티 카드 목록 조회
@@ -114,7 +118,7 @@ export default function MentorMainPage() {
       getPendingFeedbacksByDate(token, date)
         .then((res) => {
           const list = res.data ?? res;
-          return mapFeedbacks(list);
+          return mapFeedbacks(list, date);
         })
         .catch(() => []) // 개별 날짜 실패 시 빈 배열
     );
@@ -140,6 +144,40 @@ export default function MentorMainPage() {
         setWeekFeedbacks([]);
       });
   }, [token]);
+
+  // 선택된 날짜에 따라 표시할 피드백 필터링
+  useEffect(() => {
+    if (!selectedDate) {
+      setDisplayFeedbacks(weekFeedbacks);
+    } else {
+      const filtered = allFeedbacks.filter((f) => f.date === selectedDate);
+      setDisplayFeedbacks(filtered);
+    }
+  }, [selectedDate, allFeedbacks, weekFeedbacks]);
+
+  // 표시 중인 피드백(선택 날짜 기준)이 변경되면 멘티별 미완료 피드백 수 계산
+  useEffect(() => {
+    if (displayFeedbacks.length === 0 && mentees.length === 0) return;
+
+    // 멘티 이름별 미완료 피드백 수 계산 (선택된 날짜 기준)
+    const countMap = {};
+    for (const f of displayFeedbacks) {
+      if (f.mentee) {
+        countMap[f.mentee] = (countMap[f.mentee] || 0) + 1;
+      }
+    }
+
+    // mentees에 feedbackCount 반영 (이름 기준 매칭)
+    setMentees((prev) => {
+      const updated = prev.map((m) => ({
+        ...m,
+        feedbackCount: countMap[m.name] ?? 0,
+      }));
+      // 실제로 변경이 있을 때만 업데이트 (무한루프 방지)
+      const changed = updated.some((u, i) => u.feedbackCount !== prev[i].feedbackCount);
+      return changed ? updated : prev;
+    });
+  }, [displayFeedbacks]);
 
   // 초기 로드
   useEffect(() => {
@@ -245,17 +283,22 @@ export default function MentorMainPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                {/* 주간 캘린더 (표시 전용) */}
-                <WeeklyCalendar />
+                {/* 주간 캘린더 (날짜 선택 가능) */}
+                <WeeklyCalendar
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                />
 
-                {/* 이번 주 전체 피드백 리스트 */}
+                {/* 선택 날짜 피드백 리스트 */}
                 <div className="p-4 space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
-                  {weekFeedbacks.map((f) => (
+                  {displayFeedbacks.map((f) => (
                     <IncompleteFeedbackCard key={f.id} item={f} />
                   ))}
-                  {weekFeedbacks.length === 0 && (
+                  {displayFeedbacks.length === 0 && (
                     <div className="text-sm text-gray-400 text-center py-4">
-                      이번 주 미완료 피드백이 없습니다.
+                      {selectedDate
+                        ? `${selectedDate.slice(5).replace("-", "/")} 미완료 피드백이 없습니다.`
+                        : "이번 주 미완료 피드백이 없습니다."}
                     </div>
                   )}
                 </div>
