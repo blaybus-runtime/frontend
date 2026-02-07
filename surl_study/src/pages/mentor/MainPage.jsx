@@ -82,16 +82,23 @@ export default function MentorMainPage() {
       if (!token) return;
       getMyMentees(token, date)
         .then((res) => {
-          const list = res.data.map((m) => ({
+          console.log("getMyMentees 응답:", JSON.stringify(res, null, 2));
+          const data = res.data ?? res;
+          const arr = Array.isArray(data) ? data : [];
+          const list = arr.map((m) => ({
             id: m.menteeId,
             name: m.name,
             avatar: m.profileImageUrl,
             feedbackCount: m.unwrittenFeedbackCount ?? 0,
+            highSchool: m.highSchool || "",
+            grade: m.grade || 0,
+            subjects: m.subjects || [],
           }));
           setMentees(list);
         })
         .catch((err) => {
           console.error("멘티 목록 조회 실패:", err);
+          console.error("에러 상세:", err.data || err.message);
           setMentees([]);
         })
         .finally(() => setLoading(false));

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, forwardRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ko } from "date-fns/locale";
@@ -13,11 +13,13 @@ import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
 import { useAuth } from "../../context/AuthContext";
 import { getMenteeDailyPlan, getStudyDaily } from "../../api/task";
+import { getMyMentees } from "../../api/matching";
 
-const mockMenteeById = {
-  1: { id: 1, name: "설이 멘티", school: "달천고등학교 3학년", track: "수시전형" },
-  2: { id: 2, name: "채영 멘티", school: "OO고등학교 2학년", track: "정시전형" },
-};
+// 과목 목록 → 전형 표시 텍스트 변환
+function formatSubjects(subjects) {
+  if (!subjects || subjects.length === 0) return "";
+  return subjects.join(", ");
+}
 
 const initialMemos = ["후반 집중력 키우기", "중요단어 지문 반복 복습 우선", "오답은 개념 복습보다 지문 구조 파악 지점에서 주로 발생", "단기 목표 지문 처리 시간 단축"];
 
@@ -68,8 +70,7 @@ export default function MentorMenteeDetailPage() {
   const nav = useNavigate();
   const { menteeId } = useParams();
   const { token } = useAuth();
-
-  const mentee = mockMenteeById[menteeId] ?? { id: menteeId, name: `멘티 ${menteeId}`, school: "학교 정보", track: "전형" };
+  const location = useLocation();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const [selectedDate, setSelectedDate] = useState(today);
@@ -78,6 +79,41 @@ export default function MentorMenteeDetailPage() {
   const [pendingFeedback, setPendingFeedback] = useState([]);
   const [memos, setMemos] = useState(initialMemos);
   const [openCreate, setOpenCreate] = useState(false);
+  const [mentee, setMentee] = useState({
+    id: menteeId,
+    name: `멘티 ${menteeId}`,
+    school: "",
+    track: "",
+  });
+
+  // 멘티 프로필 정보 로드 — 항상 API 호출하여 최신 정보 반영
+  useEffect(() => {
+    if (!token) return;
+
+    // navigate state가 있으면 우선 이름만 표시 (로딩 중)
+    const info = location.state?.menteeInfo;
+    if (info?.name) {
+      setMentee((prev) => ({ ...prev, name: info.name }));
+    }
+
+    // API에서 학교/과목 등 상세 정보 가져오기
+    getMyMentees(token, today)
+      .then((res) => {
+        const list = res.data ?? [];
+        const found = list.find((m) => String(m.menteeId) === String(menteeId));
+        if (found) {
+          setMentee({
+            id: menteeId,
+            name: found.name,
+            school: found.highSchool
+              ? `${found.highSchool}${found.grade ? ` ${found.grade}학년` : ""}`
+              : "",
+            track: formatSubjects(found.subjects),
+          });
+        }
+      })
+      .catch((err) => console.error("멘티 정보 조회 실패:", err));
+  }, [menteeId, token]);
 
   // API에서 할 일 데이터 조회 (멘토 API + study/daily API로 worksheet 병합)
   const fetchDailyTodos = useCallback(async (date) => {
@@ -189,7 +225,9 @@ export default function MentorMenteeDetailPage() {
                 {mentee.name}
               </div>
             </div>
-            <p className="mt-1.5 pl-1 text-sm text-gray-400">{mentee.school} | {mentee.track} </p>
+            <p className="mt-1.5 pl-1 text-sm text-gray-400">
+              {[mentee.school, mentee.track].filter(Boolean).join(" | ") || "정보 없음"}
+            </p>
           </div>
           <button
             onClick={() => setOpenCreate(true)}

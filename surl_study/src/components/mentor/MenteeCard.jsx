@@ -6,7 +6,7 @@ export default function MentorMenteeCard({ mentee, feedbackCount = 0 }) {
 
   return (
     <div
-      onClick={() => navigate(`/mentor/mentees/${mentee.id}`)}
+      onClick={() => navigate(`/mentor/mentees/${mentee.id}`, { state: { menteeInfo: mentee } })}
       className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
     >
       <div className="flex flex-col items-center">
