@@ -47,9 +47,21 @@ export default function StudyTimeModal({ onClose, onRecorded, plannerId }) {
       onClose();
     } catch (err) {
       console.error("공부 시간 기록 실패:", err);
-      const msg = err.data?.message || err.message || "";
-      if (msg.includes("이미") || msg.includes("already")) {
-        setError("해당 시간대에 이미 공부 기록이 있습니다.");
+      console.error("err.data:", err.data);
+      console.error("err.message:", err.message);
+      console.error("err.status:", err.status);
+      const msg = err.data?.message || err.data?.error || err.message || "";
+      if (
+        msg.includes("이미") ||
+        msg.includes("already") ||
+        msg.includes("겹") ||
+        msg.includes("overlap") ||
+        msg.includes("공부 기록")
+      ) {
+        setError("시간이 겹칩니다. 다른 시간으로 설정해주세요.");
+      } else if (err.status === 500) {
+        // 백엔드에서 시간 겹침 시 RuntimeException → 500 에러 반환
+        setError("시간이 겹칩니다. 다른 시간으로 설정해주세요.");
       } else {
         setError("공부 시간 기록에 실패했습니다. 다시 시도해주세요.");
       }
