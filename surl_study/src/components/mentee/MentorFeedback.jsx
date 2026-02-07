@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { getComments, createComment } from "../../api/task";
+import { getFeedback, getComments, createComment } from "../../api/task";
 
 // 시간 포맷 헬퍼: createdAt → "N분 전", "N시간 전" 등
 function formatTimeAgo(createdAt) {
@@ -17,13 +17,33 @@ function formatTimeAgo(createdAt) {
   return `${diffDay}일 전`;
 }
 
-export default function MentorFeedback({ feedback, comments: initialComments, taskId }) {
+export default function MentorFeedback({ taskId }) {
+  const [feedback, setFeedback] = useState(null);
   const [newComment, setNewComment] = useState("");
-  const [commentList, setCommentList] = useState(initialComments || []);
+  const [commentList, setCommentList] = useState([]);
   const [loading, setLoading] = useState(false);
   const { token, user } = useAuth();
 
-  // taskId가 있으면 API에서 댓글 조회
+  // taskId로 피드백 조회
+  useEffect(() => {
+    if (!taskId || !token) return;
+
+    getFeedback(token, taskId)
+      .then((json) => {
+        const data = json.data ?? json;
+        setFeedback({
+          mentorName: data.mentorName ?? data.writerName ?? "멘토",
+          mentorAvatar: data.mentorProfileUrl ?? data.writerProfileUrl ?? null,
+          timeAgo: formatTimeAgo(data.createdAt),
+          content: data.content ?? "",
+        });
+      })
+      .catch((err) => {
+        console.error("피드백 조회 실패:", err);
+      });
+  }, [taskId, token]);
+
+  // taskId로 댓글 조회
   useEffect(() => {
     if (!taskId || !token) return;
 
@@ -94,21 +114,27 @@ export default function MentorFeedback({ feedback, comments: initialComments, ta
       <h2 className="text-lg font-bold text-gray-900">멘토 피드백</h2>
 
       {/* 1. 피드백 글 카드 */}
-      <div className="mt-4 rounded-2xl bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 shrink-0 rounded-full bg-gray-200" />
-            <span className="text-sm font-semibold text-gray-900">
-              {feedback.mentorName}
-            </span>
+      {feedback ? (
+        <div className="mt-4 rounded-2xl bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-gray-200" />
+              <span className="text-sm font-semibold text-gray-900">
+                {feedback.mentorName}
+              </span>
+            </div>
+            <span className="text-xs text-gray-400">{feedback.timeAgo}</span>
           </div>
-          <span className="text-xs text-gray-400">{feedback.timeAgo}</span>
-        </div>
 
-        <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-gray-700">
-          {feedback.content}
-        </p>
-      </div>
+          <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-gray-700">
+            {feedback.content}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl bg-white p-6 shadow-sm">
+          <p className="text-sm text-gray-400 text-center">아직 피드백이 없습니다.</p>
+        </div>
+      )}
 
       {/* 2. 댓글 헤더 */}
       <div className="mt-6 flex items-center gap-2 px-1">

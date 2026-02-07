@@ -33,7 +33,7 @@ export default function TaskCard({ task, onStatusChange }) {
   return (
     <div
       className="w-full rounded-xl border border-gray-200 bg-white px-5 py-4 cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => navigate(`/mentee/task/${task.id}`)}
+      onClick={() => navigate(`/mentee/task/${task.id}`, { state: { task } })}
     >
       <div className="flex items-start justify-between gap-4">
         {/* Left */}

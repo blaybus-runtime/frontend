@@ -1,57 +1,40 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import MentorFeedback from "../../components/mentee/MentorFeedback";
 
-// 더미 데이터
-const dummyTask = {
-  id: 1,
-  subject: "국어",
-  subjectColor: "bg-amber-100 text-amber-700",
-  teacherName: "강지연 국어",
-  taskTitle: "강지연 국어 5P 풀기",
-  learningContent: {
-    activeTab: "학습 내용 공유",
-    attachments: [
-      { id: 1, type: "image", url: "/placeholder1.jpg" },
-      { id: 2, type: "image", url: "/placeholder2.jpg" },
-      { id: 3, type: "image", url: "/placeholder3.jpg" },
-      { id: 4, type: "image", url: "/placeholder4.jpg" },
-      { id: 5, type: "image", url: "/placeholder5.jpg" },
-    ],
-  },
-  feedback: {
-    mentorName: "설이쌤",
-    mentorAvatar: null,
-    timeAgo: "1시간 전",
-    content:
-      "수고했습니다! 벌써 단어의 형성 단원까지 나아갔군요! 아마 방학 기간 동안 독서, 문학, 문법을 이렇게까지 체계적으로 공부해 온 학생은 굉장히 소수일 것이라 생각합니다!\n혹시 '오답노트'를 쓰면서 확실히 이 문항을 틀렸던 근본적인 원인에 다가간다는 느낌을 받으시나요? 문법은 개념을 암기하는 것을 넘어 문항 풀이 자체로도 따로 대비해야 한다는 것을 체감할 수 있으면 합니다 ☺️ 이쪽 되어서 알선 개념을 복습하고 넘어가는 것이 좋겠습니다! 다음 문법 강의 수강일인 22일에는 새로운 강의를 듣지 말고 '용언', '수식언', '관계언', '체언' 단원의 개념을 백지복습할 수 있는 수준까지 암기해오세요! 단순 이해가 아니라 암기가 되어야 합니다 😊",
-  },
-  comments: [
-    {
-      id: 1,
-      author: "설이",
-      authorAvatar: null,
-      timeAgo: "10분 전",
-      content:
-        "네 확실히 오답노트 쓰니까 이해가 되는 것 같아요!\n다음 시간까지 암기해오겠습니다.",
-      isReply: true,
-    },
-    {
-      id: 2,
-      author: "설이쌤",
-      authorAvatar: null,
-      timeAgo: "1분 전",
-      content: "화이팅~!!",
-      isReply: true,
-    },
-  ],
+// 과목별 태그 색상 매핑
+const SUBJECT_COLORS = {
+  국어: "bg-amber-100 text-amber-700",
+  영어: "bg-rose-100 text-rose-700",
+  수학: "bg-emerald-100 text-emerald-700",
+};
+
+const dummyLearningContent = {
+  activeTab: "학습 내용 공유",
+  attachments: [],
 };
 
 export default function TaskDetailPage() {
   const { taskId } = useParams();
-  const [task] = useState(dummyTask);
+  const location = useLocation();
+  const taskFromState = location.state?.task;
+
+  // API에서 전달받은 subject, taskTitle, goal 사용
+  const subject = taskFromState?.subject || "국어";
+  const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
+  const taskTitle = taskFromState?.taskTitle || "";
+  const goal = taskFromState?.goal || "";
+  const content = taskFromState?.title || "";
+
+  const [task] = useState({
+    subject,
+    subjectColor,
+    teacherName: `${taskTitle}`,
+    taskTitle: goal ? `${subject} ${goal}` : content,
+    learningContent: dummyLearningContent,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,11 +99,7 @@ export default function TaskDetailPage() {
           <LearningContent data={task.learningContent} />
 
           {/* 오른쪽: 멘토 피드백 + 댓글 */}
-          <MentorFeedback
-            feedback={task.feedback}
-            comments={task.comments}
-            taskId={taskId}
-          />
+          <MentorFeedback taskId={taskId} />
         </div>
       </main>
     </div>

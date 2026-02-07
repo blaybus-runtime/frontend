@@ -1,10 +1,24 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { createTaskBatch, createMenteeTaskBatch, uploadWorksheet } from "../../api/task";
+import { createTaskBatch, createMenteeTaskBatch, uploadMentorWorksheet, uploadMenteeWorksheet } from "../../api/task";
 import { getMyMentees } from "../../api/matching";
 
 const SUBJECTS = ["국어", "영어", "수학"];
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+
+// 이번 주 월~일 날짜를 yyyy-MM-dd 형식으로 구하는 헬퍼
+function getWeekRange() {
+  const today = new Date();
+  const day = today.getDay(); // 0(일)~6(토)
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const fmt = (d) => d.toISOString().split("T")[0];
+  return { startDate: fmt(monday), endDate: fmt(sunday) };
+}
 
 export default function AddTaskModal({ onClose, onTaskAdded }) {
   const { token, user } = useAuth();
@@ -12,7 +26,9 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
   const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
-  const [selectedDays, setSelectedDays] = useState([]);
+  // 오늘 요일을 기본 선택 (오늘 할 일에 바로 표시되도록)
+  const todayDayName = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  const [selectedDays, setSelectedDays] = useState([todayDayName]);
   // 다중 파일: [{ file, days: [] }, ...]
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
@@ -99,33 +115,45 @@ export default function AddTaskModal({ onClose, onTaskAdded }) {
     setLoading(true);
 
     try {
-      let worksheetId = null;
+      // 1) 모든 파일을 먼저 worksheet로 업로드 → worksheetId 획득
+      const uploadFn = isMentor ? uploadMentorWorksheet : uploadMenteeWorksheet;
+      const uploadedFiles = [];
 
-      // 첫 번째 파일이 있으면 worksheet 업로드
-      if (files.length > 0) {
-        const wsRes = await uploadWorksheet(token, {
-          file: files[0].file,
-          title,
-          subject,
-        });
-        const wsPayload = wsRes.data ?? wsRes;
-        worksheetId = wsPayload.worksheetId;
+      for (const f of files) {
+        try {
+          const wsRes = await uploadFn(token, {
+            file: f.file,
+            title,
+            subject,
+          });
+          const wsPayload = wsRes.data ?? wsRes;
+          uploadedFiles.push({
+            worksheetId: wsPayload.worksheetId,
+            weekdays: f.days.length > 0 ? f.days : null,
+          });
+        } catch (uploadErr) {
+          console.error("파일 업로드 실패:", f.file.name, uploadErr);
+        }
       }
 
-      // task 생성: 멘토는 /api/v1/mentor/tasks/batch, 멘티는 /api/v1/mentee/tasks/batch
+      // 2) 백엔드 요청 body 구성
+      //    files: @NotEmpty → 파일 없으면 worksheetId=null 더미 1개
+      const filesPayload = uploadedFiles.length > 0
+        ? uploadedFiles
+        : [{ worksheetId: null, weekdays: null }];
+
+      // 선택한 요일에 맞게 이번 주 월~일 범위로 task 생성
+      const { startDate, endDate } = getWeekRange();
+
       const body = {
         subject,
         goal,
         title,
-        startDate: today,
-        endDate: today,
-        days: selectedDays,
-        files: files.map((f) => ({
-          fileName: f.file.name,
-          days: f.days,
-        })),
+        startDate,
+        endDate,
+        weekdays: selectedDays,   // 백엔드 필드명: weekdays (days ❌)
+        files: filesPayload,      // 백엔드: [{ worksheetId, weekdays }]
       };
-      if (worksheetId) body.worksheetId = worksheetId;
 
       let res;
       if (isMentor) {

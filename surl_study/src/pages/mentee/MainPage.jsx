@@ -50,6 +50,8 @@ function getWeekRange() {
 }
 
 export default function MainPage() {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [tasks, setTasks] = useState([]);
   const [totalRate, setTotalRate] = useState(0);
   const [subjectStats, setSubjectStats] = useState([]);
@@ -81,6 +83,9 @@ export default function MainPage() {
         title: t.content,
         status: t.isCompleted ? "피드백 완료" : "피드백 대기",
         done: t.isCompleted,
+        subject: t.subject,
+        taskTitle: t.title,
+        goal: t.goal,
       }));
       setTasks(mapped);
     } catch (err) {
@@ -89,12 +94,11 @@ export default function MainPage() {
     }
   };
 
-  // 오늘 할 일 API
+  // 선택된 날짜의 할 일 + 공부 시간 데이터 가져오기
   useEffect(() => {
     if (!user?.userId) return;
-    const today = new Date().toISOString().split("T")[0];
-    fetchDailyTasks(today);
-  }, [user]);
+    fetchDailyTasks(selectedDate);
+  }, [user, selectedDate]);
 
   // 학습 진척도 API
   useEffect(() => {
@@ -128,7 +132,9 @@ export default function MainPage() {
           {/* LEFT */}
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold !text-[#222222]">오늘 할 일</h2>
+              <h2 className="text-lg font-semibold !text-[#222222]">
+                {selectedDate === todayStr ? "오늘 할 일" : `${selectedDate.slice(5).replace("-", "/")} 할 일`}
+              </h2>
 
               <button
                 onClick={() => setShowAddTask(true)}
@@ -166,7 +172,11 @@ export default function MainPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                <WeeklyCalendar dailyStats={dailyStats} />
+                <WeeklyCalendar
+                  dailyStats={dailyStats}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                />
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <StudyTimeChart timeRecords={timeRecords} />
                 </div>
@@ -194,8 +204,7 @@ export default function MainPage() {
           plannerId={plannerId}
           onClose={() => setShowStudyTime(false)}
           onRecorded={() => {
-            const today = new Date().toISOString().split("T")[0];
-            fetchDailyTasks(today);
+            fetchDailyTasks(selectedDate);
           }}
         />
       )}
@@ -203,18 +212,8 @@ export default function MainPage() {
       {showAddTask && (
         <AddTaskModal
           onClose={() => setShowAddTask(false)}
-          onTaskAdded={(data) => {
-            // API 응답의 tasks를 기존 목록에 추가
-            const newTasks = (data.tasks || []).map((t) => ({
-              id: t.taskId,
-              menteeId: data.menteeId,
-              tag: t.subject,
-              tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
-              title: t.title,
-              status: "피드백 대기",
-              done: false,
-            }));
-            setTasks((prev) => [...prev, ...newTasks]);
+          onTaskAdded={() => {
+            fetchDailyTasks(selectedDate);
           }}
         />
       )}
