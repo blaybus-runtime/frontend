@@ -81,11 +81,18 @@ export default function MainPage() {
         tag: t.subject,
         tagColor: SUBJECT_COLORS[t.subject] || DEFAULT_TAG_COLOR,
         title: t.content,
-        status: t.isCompleted ? "피드백 완료" : "피드백 대기",
         done: t.isCompleted,
+        feedbackDone: t.isFeedbackDone ?? t.isFeedbackCompleted ?? false,
+        isSubmitted: t.isSubmitted ?? false,
         subject: t.subject,
         taskTitle: t.title,
         goal: t.goal,
+        worksheets: (t.worksheets ?? []).map((w) => ({
+          worksheetId: w.worksheetId,
+          title: w.title,
+          subject: w.subject,
+          fileUrl: w.fileUrl,
+        })),
       }));
       setTasks(mapped);
     } catch (err) {

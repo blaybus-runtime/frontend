@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import { useAuth } from "../../context/AuthContext";
-import { getFeedback, createFeedback, updateFeedback, deleteFeedback, getComments, createComment } from "../../api/task";
+import { getFeedback, createFeedback, updateFeedback, deleteFeedback, getComments, createComment, getTaskDetail, downloadWorksheets } from "../../api/task";
 
 // 과목별 태그 색상 매핑
 const SUBJECT_COLORS = {
@@ -40,19 +40,46 @@ export default function FeedbackDetailPage() {
   const subject = taskFromState?.subject || "";
   const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
 
-  const [task] = useState({
-    id: feedbackId,
-    subject,
-    subjectColor,
-    teacherName: taskFromState?.title || "",
-    taskTitle: taskFromState?.goal ? `${taskFromState.desc || taskFromState.title} | ${taskFromState.goal}` : (taskFromState?.desc || ""),
-    learningContent: {
-      activeTab: "학습 내용 공유",
-      attachments: [],
-    },
-  });
+  const teacherName = taskFromState?.title || "";
+  const taskTitle = taskFromState?.goal ? `${taskFromState.desc || taskFromState.title} | ${taskFromState.goal}` : (taskFromState?.desc || "");
 
   const [showMenu, setShowMenu] = useState(false);
+
+  // 학습지 + 제출물 상태
+  const [worksheets, setWorksheets] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [downloading, setDownloading] = useState(false);
+
+  // Task 상세 조회 (학습지 + 제출물)
+  const fetchTaskDetail = useCallback(async () => {
+    if (!token || !feedbackId) return;
+    try {
+      const res = await getTaskDetail(token, feedbackId);
+      const data = res.data || res;
+      setWorksheets(data.worksheets || []);
+      setSubmissions(data.submissions || []);
+    } catch (err) {
+      console.error("할일 상세 조회 실패:", err);
+    }
+  }, [token, feedbackId]);
+
+  useEffect(() => {
+    fetchTaskDetail();
+  }, [fetchTaskDetail]);
+
+  // 학습 자료 다운로드
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadWorksheets(token, feedbackId);
+    } catch (err) {
+      console.error("학습 자료 다운로드 실패:", err);
+      alert("학습 자료 다운로드에 실패했습니다.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   // 피드백 상태: API에서 조회
   const [feedback, setFeedback] = useState(null);
@@ -166,24 +193,29 @@ export default function FeedbackDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${task.subjectColor}`}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${subjectColor}`}
               >
-                {task.subject}
+                {subject}
               </span>
               <h1 className="text-2xl font-bold text-gray-900">
-                {task.teacherName}
+                {teacherName}
               </h1>
             </div>
-            <p className="mt-1.5 pl-1 text-sm text-gray-400">{task.taskTitle}</p>
+            <p className="mt-1.5 pl-1 text-sm text-gray-400">{taskTitle}</p>
           </div>
 
-          <button className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90" style={{ backgroundColor: "#6D87ED" }}>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: "#6D87ED" }}
+          >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M4.66699 6.66699L8.00033 10.0003L11.3337 6.66699" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M8 10V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            학습 내용 다운
+            {downloading ? "다운로드 중..." : "학습 자료"}
           </button>
         </div>
       </div>
@@ -192,7 +224,10 @@ export default function FeedbackDetailPage() {
       <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[2fr_3fr]">
           {/* 왼쪽: 학습 내용 */}
-          <LearningContent data={task.learningContent} />
+          <LearningContent
+            worksheets={worksheets}
+            submissions={submissions}
+          />
 
           {/* 오른쪽: 멘토 피드백 영역 */}
           <section>

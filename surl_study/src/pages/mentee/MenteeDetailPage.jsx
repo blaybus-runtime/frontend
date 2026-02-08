@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, forwardRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ko } from "date-fns/locale";
@@ -10,16 +10,17 @@ import WeekStrip from "../../components/mentor_detail/WeekStrip";
 import TodoRow from "../../components/mentor_detail/TodoRow";
 import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
-import CreateTodoModal from "../../components/mentor_detail/CreateTodoModal";
+import AddTaskModal from "../../components/mentee/AddTaskModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMenteeDailyPlan } from "../../api/task";
+import { getMenteeDailyPlan, getStudyDaily, getMentorMemos } from "../../api/task";
+import { getMyMentees } from "../../api/matching";
 
-const mockMenteeById = {
-  1: { id: 1, name: "설이 멘티", school: "달천고등학교 3학년", track: "수시전형" },
-  2: { id: 2, name: "채영 멘티", school: "OO고등학교 2학년", track: "정시전형" },
-};
+// 과목 목록 → 전형 표시 텍스트 변환
+function formatSubjects(subjects) {
+  if (!subjects || subjects.length === 0) return "";
+  return subjects.join(", ");
+}
 
-const initialMemos = ["후반 집중력 키우기", "중요단어 지문 반복 복습 우선", "오답은 개념 복습보다 지문 구조 파악 지점에서 주로 발생", "단기 목표 지문 처리 시간 단축"];
 
 const subjectStyle = (subject) => {
   switch (subject) {
@@ -68,36 +69,112 @@ export default function MentorMenteeDetailPage() {
   const nav = useNavigate();
   const { menteeId } = useParams();
   const { token } = useAuth();
-
-  const mentee = mockMenteeById[menteeId] ?? { id: menteeId, name: `멘티 ${menteeId}`, school: "학교 정보", track: "전형" };
+  const location = useLocation();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const [selectedDate, setSelectedDate] = useState(today);
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pendingFeedback, setPendingFeedback] = useState([]);
-  const [memos, setMemos] = useState(initialMemos);
+  const [memos, setMemos] = useState([]);
   const [openCreate, setOpenCreate] = useState(false);
+  const [mentee, setMentee] = useState({
+    id: menteeId,
+    name: `멘티 ${menteeId}`,
+    school: "",
+    track: "",
+  });
 
-  // API에서 할 일 데이터 조회
+  // 멘티 프로필 정보 로드 — 항상 API 호출하여 최신 정보 반영
+  useEffect(() => {
+    if (!token) return;
+
+    // navigate state가 있으면 우선 이름만 표시 (로딩 중)
+    const info = location.state?.menteeInfo;
+    if (info?.name) {
+      setMentee((prev) => ({ ...prev, name: info.name }));
+    }
+
+    // API에서 학교/과목 등 상세 정보 가져오기
+    getMyMentees(token, today)
+      .then((res) => {
+        const list = res.data ?? [];
+        const found = list.find((m) => String(m.menteeId) === String(menteeId));
+        if (found) {
+          setMentee({
+            id: menteeId,
+            name: found.name,
+            school: found.highSchool
+              ? `${found.highSchool}${found.grade ? ` ${found.grade}학년` : ""}`
+              : "",
+            track: formatSubjects(found.subjects),
+          });
+        }
+      })
+      .catch((err) => console.error("멘티 정보 조회 실패:", err));
+  }, [menteeId, token]);
+
+  // 메모 조회 (최대 5개)
+  useEffect(() => {
+    if (!token) return;
+    getMentorMemos(token, menteeId)
+      .then((res) => {
+        const items = res.data?.items ?? [];
+        setMemos(items);
+      })
+      .catch((err) => console.error("메모 조회 실패:", err));
+  }, [token, menteeId]);
+
+  // API에서 할 일 데이터 조회 (멘토 API + study/daily API로 worksheet 병합)
   const fetchDailyTodos = useCallback(async (date) => {
     setLoading(true);
     try {
-      const json = await getMenteeDailyPlan(token, menteeId, date);
-      // 응답: { data: [ { taskId, title, content, subject, taskType, isTaskCompleted, isFeedbackCompleted } ] }
+      // 멘토 API와 study/daily API를 병렬 호출
+      const [json, studyJson] = await Promise.all([
+        getMenteeDailyPlan(token, menteeId, date),
+        getStudyDaily(token, menteeId, date).catch(() => null),
+      ]);
+
+      // study/daily에서 worksheet 맵 + submission 맵 구성
+      const worksheetMap = {};
+      const submittedMap = {};
+      if (studyJson) {
+        const studyData = studyJson.data ?? studyJson;
+        const studyTodos = studyData.todos ?? (Array.isArray(studyData) ? studyData : []);
+        for (const t of studyTodos) {
+          const tid = t.id ?? t.taskId;
+          if (tid) {
+            submittedMap[tid] = t.isSubmitted ?? false;
+            if (t.worksheets?.length > 0) {
+              worksheetMap[tid] = t.worksheets.map((w) => ({
+                worksheetId: w.worksheetId,
+                title: w.title,
+                subject: w.subject,
+                fileUrl: w.fileUrl,
+              }));
+            }
+          }
+        }
+      }
+
       const list = json.data ?? json;
       const tasks = Array.isArray(list) ? list : (list.todos ?? []);
-      const apiTodos = tasks.map((t) => ({
-        id: t.taskId ?? t.id,
-        subject: t.subject,
-        type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
-        title: t.title || t.content,
-        desc: t.content || t.title,
-        goal: t.goal || "",
-        date: date,
-        taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
-        feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
-      }));
+      const apiTodos = tasks.map((t) => {
+        const tid = t.taskId ?? t.id;
+        return {
+          id: tid,
+          subject: t.subject,
+          type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
+          title: t.title || t.content,
+          desc: t.content || t.title,
+          goal: t.goal || "",
+          date: date,
+          taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
+          feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
+          isSubmitted: submittedMap[tid] ?? false,
+          worksheets: worksheetMap[tid] || [],
+        };
+      });
       setTodos(apiTodos);
 
       // 선택된 날짜의 미완료 피드백: 과제 완료 + 피드백 미작성
@@ -130,7 +207,7 @@ export default function MentorMenteeDetailPage() {
   const addMemo = (text) => {
     const v = text.trim();
     if (!v) return;
-    setMemos((prev) => [v, ...prev]);
+    setMemos((prev) => [{ content: v, createdAt: new Date().toISOString() }, ...prev]);
   };
 
   const CustomDateInput = forwardRef(({ value, onClick }, ref) => (
@@ -163,7 +240,9 @@ export default function MentorMenteeDetailPage() {
                 {mentee.name}
               </div>
             </div>
-            <p className="mt-1.5 pl-1 text-sm text-gray-400">{mentee.school} | {mentee.track} </p>
+            <p className="mt-1.5 pl-1 text-sm text-gray-400">
+              {[mentee.school, mentee.track].filter(Boolean).join(" | ") || "정보 없음"}
+            </p>
           </div>
           <button
             onClick={() => setOpenCreate(true)}
@@ -203,7 +282,10 @@ export default function MentorMenteeDetailPage() {
                   <WeekStrip selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
                   <div className="rounded-lg !border !border-gray-200 border border-none bg-white px-4 mt-4">
-                    <button className="w-full !bg-white py-3 text-sm font-semibold text-gray-600 hover:bg-gray-100">
+                    <button
+                      onClick={() => setOpenCreate(true)}
+                      className="w-full !bg-white py-3 text-sm font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer"
+                    >
                       + 할일 추가하기
                     </button>
                   </div>
@@ -247,16 +329,15 @@ export default function MentorMenteeDetailPage() {
             </section>
           </div>
       </main>
-      <CreateTodoModal
-        open={openCreate}
-        onClose={() => setOpenCreate(false)}
-        onSubmit={(payload) => {
-          console.log("새 할일 payload:", payload);
-          setOpenCreate(false);
-          // 할일 생성 후 현재 날짜 데이터를 API에서 다시 불러오기
-          fetchDailyTodos(selectedDate);
-        }}
-      />
+      {openCreate && (
+        <AddTaskModal
+          fixedMenteeId={Number(menteeId)}
+          onClose={() => setOpenCreate(false)}
+          onTaskAdded={() => {
+            fetchDailyTodos(selectedDate);
+          }}
+        />
+      )}
 
     </div>
   );

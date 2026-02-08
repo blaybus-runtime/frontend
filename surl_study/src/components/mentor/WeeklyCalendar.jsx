@@ -1,6 +1,13 @@
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 
-export default function WeeklyCalendar() {
+function formatDate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export default function WeeklyCalendar({ selectedDate, onSelectDate }) {
   const today = new Date();
   const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
   // 월요일 기준 오프셋 (일=6, 월=0, 화=1 ...)
@@ -20,6 +27,8 @@ export default function WeeklyCalendar() {
     d.getMonth() === today.getMonth() &&
     d.getFullYear() === today.getFullYear();
 
+  const isSelected = (d) => selectedDate && formatDate(d) === selectedDate;
+
   return (
     <div className="px-4 pt-4 pb-2 border-b border-gray-100">
       <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-2">
@@ -30,15 +39,18 @@ export default function WeeklyCalendar() {
       <div className="grid grid-cols-7 text-center">
         {dates.map((d, i) => (
           <div key={i} className="flex justify-center">
-            <span
-              className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                isToday(d)
+            <button
+              onClick={() => onSelectDate?.(formatDate(d))}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold cursor-pointer transition-colors ${
+                isSelected(d)
                   ? "bg-[#6D87ED] text-white"
-                  : "text-gray-700"
+                  : isToday(d)
+                    ? "bg-[#E8EAF0] text-[#6D87ED]"
+                    : "text-gray-700 hover:bg-gray-100"
               }`}
             >
               {d.getDate()}
-            </span>
+            </button>
           </div>
         ))}
       </div>

@@ -1,12 +1,24 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
-export default function LearningContent({ data }) {
+export default function LearningContent({
+  worksheets = [],
+  submissions = [],
+  onSubmitFiles,
+  uploading = false,
+}) {
   const [activeTab, setActiveTab] = useState("학습 내용 공유");
   const tabs = ["학습 내용 공유", "학습지"];
+  const fileInputRef = useRef(null);
 
-  // 보이는 썸네일 수 (나머지는 +N으로 표시)
-  const VISIBLE_COUNT = 3;
-  const extraCount = data.attachments.length - VISIBLE_COUNT;
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    if (onSubmitFiles) {
+      await onSubmitFiles(files);
+    }
+    // reset input so same file can be re-selected
+    e.target.value = "";
+  };
 
   return (
     <section>
@@ -31,104 +43,204 @@ export default function LearningContent({ data }) {
           ))}
         </div>
 
-        {/* 첨부파일 헤더 */}
-        <div className="mt-5 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-700">첨부파일</span>
-        <button className="text-gray-400 hover:text-gray-600">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8.25 3H3C2.60218 3 2.22064 3.15804 1.93934 3.43934C1.65804 3.72064 1.5 4.10218 1.5 4.5V15C1.5 15.3978 1.65804 15.7794 1.93934 16.0607C2.22064 16.342 2.60218 16.5 3 16.5H13.5C13.8978 16.5 14.2794 16.342 14.5607 16.0607C14.842 15.7794 15 15.3978 15 15V9.75"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M13.875 1.87499C14.1734 1.57662 14.578 1.40901 15 1.40901C15.422 1.40901 15.8266 1.57662 16.125 1.87499C16.4234 2.17336 16.591 2.57798 16.591 2.99999C16.591 3.42201 16.4234 3.82662 16.125 4.12499L9 11.25L6 12L6.75 8.99999L13.875 1.87499Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-
-      {/* 첨부파일 썸네일 그리드 */}
-      <div className="mt-3 flex gap-3">
-        {/* 추가 버튼 */}
-        <button className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 5V19M5 12H19"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-
-        {/* 첨부 이미지 썸네일 */}
-        {data.attachments.slice(0, VISIBLE_COUNT).map((file) => (
-          <div
-            key={file.id}
-            className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-200"
-          >
-            <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-              IMG
+        {/* ── 학습 내용 공유 탭 ── */}
+        {activeTab === "학습 내용 공유" && (
+          <>
+            {/* 첨부파일 헤더 + 추가 버튼 */}
+            <div className="mt-5 flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">
+                첨부파일{" "}
+                {submissions.length > 0 && `(${submissions.length})`}
+              </span>
+              {onSubmitFiles && (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-indigo-50 hover:text-[#6D87ED] hover:border-indigo-200 transition-colors disabled:opacity-50"
+                    title="파일 첨부"
+                  >
+                    {uploading ? (
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="opacity-25"
+                        />
+                        <path
+                          d="M4 12a8 8 0 018-8"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </>
+              )}
             </div>
-          </div>
-        ))}
 
-        {/* +N 표시 */}
-        {extraCount > 0 && (
-          <button className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-sm font-semibold text-gray-500">
-            +{extraCount}
-          </button>
+            {/* 제출된 파일 목록 */}
+            {submissions.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {submissions.map((file, idx) => (
+                  <a
+                    key={file.submissionId + "-" + idx}
+                    href={file.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#6D87ED"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-gray-900">
+                        {file.fileName || "제출 파일"}
+                      </div>
+                      {file.createdAt && (
+                        <div className="text-xs text-gray-500">
+                          {file.createdAt}
+                        </div>
+                      )}
+                    </div>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#9CA3AF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 flex h-20 items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
+                {onSubmitFiles ? "+ 버튼을 눌러 학습 내용을 제출하세요" : "제출된 학습 내용이 없습니다"}
+              </div>
+            )}
+          </>
         )}
-        </div>
 
-        {/* 학습 내용 이미지 (스크롤 가능) */}
-        <div className="mt-5 overflow-hidden rounded-xl">
-          <div className="relative w-full">
-            {/* 플레이스홀더 이미지 영역 */}
-            <div className="flex h-[400px] items-center justify-center rounded-xl bg-gray-100 text-sm text-gray-400">
-              학습 내용 이미지가 여기에 표시됩니다
+        {/* ── 학습지 탭 ── */}
+        {activeTab === "학습지" && (
+          <>
+            {/* 첨부파일 헤더 */}
+            <div className="mt-5 flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">
+                첨부파일{" "}
+                {worksheets.length > 0 && `(${worksheets.length})`}
+              </span>
             </div>
 
-            {/* 좌우 네비게이션 */}
-            <button className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full !bg-white shadow-md hover:bg-gray-50">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6 12L10 8L6 4"
-                  stroke="#374151"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
+            {/* 학습지 목록 */}
+            {worksheets.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {worksheets.map((file) => (
+                  <a
+                    key={file.worksheetId}
+                    href={file.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#6D87ED"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-gray-900">
+                        {file.title || "학습지"}
+                      </div>
+                      {file.subject && (
+                        <div className="text-xs text-gray-500">
+                          {file.subject}
+                        </div>
+                      )}
+                    </div>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#9CA3AF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 flex h-20 items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
+                등록된 학습지가 없습니다
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

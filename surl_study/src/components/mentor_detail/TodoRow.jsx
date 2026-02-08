@@ -33,14 +33,51 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
               </>
             )}
           </div>
+
+          {item.worksheets && item.worksheets.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {item.worksheets.map((w) => (
+                <a
+                  key={w.worksheetId}
+                  href={w.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  {w.title || "학습지"}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="mt-3 text-right text-xs text-gray-400">
-            {item.taskDone ? "과제 완료" : "과제 미완료"}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* 과제 제출 상태 */}
+          <div className={`text-right text-xs font-medium ${item.isSubmitted ? "text-[#6D87ED]" : "text-[#F59E0B]"}`}>
+            {item.isSubmitted ? "과제 제출" : "과제 미제출"}
           </div>
-          <div className="mt-3 text-right text-xs text-gray-400">
-            {item.taskDone ? "피드백 작성 가능" : "과제 완료 후 피드백"}
+
+          {/* 구분선 */}
+          <div className="h-3.5 w-px bg-gray-300" />
+
+          {/* 피드백 상태 */}
+          <div className={`text-right text-xs font-medium ${
+            item.feedbackDone
+              ? "text-indigo-500"
+              : item.taskDone
+                ? "text-amber-500"
+                : "text-gray-400"
+          }`}>
+            {item.feedbackDone
+              ? "피드백 완료"
+              : item.taskDone
+                ? "피드백 미완료"
+                : "과제 완료 후 피드백"}
           </div>
         </div>
       </div>
