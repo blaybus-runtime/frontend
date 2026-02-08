@@ -1,23 +1,25 @@
 import { useState, useRef, useEffect } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ko } from "date-fns/locale";
+import { format } from "date-fns";
 import { useAuth } from "../../context/AuthContext";
 import { createTaskBatch, createMenteeTaskBatch, uploadMentorWorksheet, uploadMenteeWorksheet } from "../../api/task";
 import { getMyMentees } from "../../api/matching";
 
 const SUBJECTS = ["국어", "영어", "수학"];
-const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAYS = [
+  { key: 0, label: "일" },
+  { key: 1, label: "월" },
+  { key: 2, label: "화" },
+  { key: 3, label: "수" },
+  { key: 4, label: "목" },
+  { key: 5, label: "금" },
+  { key: 6, label: "토" },
+];
 
-// 이번 주 월~일 날짜를 yyyy-MM-dd 형식으로 구하는 헬퍼
-function getWeekRange() {
-  const today = new Date();
-  const day = today.getDay(); // 0(일)~6(토)
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diffToMonday);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  const fmt = (d) => d.toISOString().split("T")[0];
-  return { startDate: fmt(monday), endDate: fmt(sunday) };
+function toISO(date) {
+  return format(date, "yyyy-MM-dd");
 }
 
 export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
@@ -26,9 +28,16 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
   const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
-  // 오늘 요일을 기본 선택 (오늘 할 일에 바로 표시되도록)
-  const todayDayName = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
-  const [selectedDays, setSelectedDays] = useState([todayDayName]);
+  // 날짜 범위 선택
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d;
+  });
+  // 반복 요일 설정 (0=일, 1=월, ... 6=토)
+  const todayKey = new Date().getDay(); // 0(일)~6(토)
+  const [repeatDays, setRepeatDays] = useState([todayKey]);
   // 다중 파일: [{ file, days: [] }, ...]
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
@@ -57,9 +66,11 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       });
   }, [isMentor, token, today]);
 
-  const toggleDay = (day) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+  const toggleRepeatDay = (dayKey) => {
+    setRepeatDays((prev) =>
+      prev.includes(dayKey)
+        ? prev.filter((d) => d !== dayKey)
+        : [...prev, dayKey].sort((a, b) => a - b)
     );
   };
 
@@ -77,16 +88,16 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const toggleFileDay = (fileIndex, day) => {
-    if (!selectedDays.includes(day)) return;
+  const toggleFileDay = (fileIndex, dayKey) => {
+    if (!repeatDays.includes(dayKey)) return;
     setFiles((prev) =>
       prev.map((item, i) =>
         i === fileIndex
           ? {
               ...item,
-              days: item.days.includes(day)
-                ? item.days.filter((d) => d !== day)
-                : [...item.days, day],
+              days: item.days.includes(dayKey)
+                ? item.days.filter((d) => d !== dayKey)
+                : [...item.days, dayKey].sort((a, b) => a - b),
             }
           : item
       )
@@ -106,8 +117,13 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       return;
     }
 
-    if (selectedDays.length === 0) {
-      setError("날짜(요일)를 하나 이상 선택해주세요.");
+    if (!startDate || !endDate) {
+      setError("시작일과 종료일을 선택해주세요.");
+      return;
+    }
+
+    if (repeatDays.length === 0) {
+      setError("반복 요일을 하나 이상 선택해주세요.");
       return;
     }
 
@@ -127,9 +143,10 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
             subject,
           });
           const wsPayload = wsRes.data ?? wsRes;
+          const fileDayLabels = { 0: "일", 1: "월", 2: "화", 3: "수", 4: "목", 5: "금", 6: "토" };
           uploadedFiles.push({
             worksheetId: wsPayload.worksheetId,
-            weekdays: f.days.length > 0 ? f.days : null,
+            weekdays: f.days.length > 0 ? f.days.map((k) => fileDayLabels[k]) : null,
           });
         } catch (uploadErr) {
           console.error("파일 업로드 실패:", f.file.name, uploadErr);
@@ -137,16 +154,16 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       }
 
       // 2) 백엔드 요청 body 구성
-      // 선택한 요일에 맞게 이번 주 월~일 범위로 task 생성
-      const { startDate, endDate } = getWeekRange();
+      const weekdayLabels = { 0: "일", 1: "월", 2: "화", 3: "수", 4: "목", 5: "금", 6: "토" };
+      const weekdays = repeatDays.map((k) => weekdayLabels[k]);
 
       const body = {
         subject,
         goal,
         title,
-        startDate,
-        endDate,
-        weekdays: selectedDays,
+        startDate: toISO(startDate),
+        endDate: toISO(endDate),
+        weekdays,
         files: uploadedFiles,
       };
 
@@ -229,22 +246,51 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
             </div>
           </div>
 
-          {/* 날짜 (요일) 선택 */}
+          {/* 날짜 범위 선택 */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">날짜</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              날짜 <span className="text-rose-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <DatePicker
+                  selected={startDate}
+                  onChange={(d) => setStartDate(d)}
+                  locale={ko}
+                  dateFormat="yyyy.MM.dd"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
+                />
+              </div>
+              <span className="text-gray-400">~</span>
+              <div className="flex-1">
+                <DatePicker
+                  selected={endDate}
+                  onChange={(d) => setEndDate(d)}
+                  locale={ko}
+                  dateFormat="yyyy.MM.dd"
+                  minDate={startDate}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 반복 요일 설정 */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">반복 요일 설정</label>
             <div className="flex gap-1.5">
-              {DAYS.map((day) => (
+              {WEEKDAYS.map((w) => (
                 <button
-                  key={day}
+                  key={w.key}
                   type="button"
-                  onClick={() => toggleDay(day)}
+                  onClick={() => toggleRepeatDay(w.key)}
                   className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
-                    selectedDays.includes(day)
+                    repeatDays.includes(w.key)
                       ? "!bg-[#6D87ED] text-white"
                       : "!bg-gray-100 text-gray-600 hover:!bg-gray-200"
                   }`}
                 >
-                  {day}
+                  {w.label}
                 </button>
               ))}
             </div>
@@ -321,27 +367,30 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
                     </div>
 
                     {/* 요일 배정 칩 */}
-                    {selectedDays.length > 0 && (
+                    {repeatDays.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
-                        {selectedDays.map((day) => (
-                          <button
-                            key={day}
-                            type="button"
-                            onClick={() => toggleFileDay(idx, day)}
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
-                              item.days.includes(day)
-                                ? "!bg-[#6D87ED] text-white"
-                                : "!bg-white text-gray-500 border border-gray-300 hover:border-[#6D87ED] hover:text-[#6D87ED]"
-                            }`}
-                          >
-                            {day}
-                          </button>
-                        ))}
+                        {repeatDays.map((dayKey) => {
+                          const label = WEEKDAYS.find((w) => w.key === dayKey)?.label;
+                          return (
+                            <button
+                              key={dayKey}
+                              type="button"
+                              onClick={() => toggleFileDay(idx, dayKey)}
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
+                                item.days.includes(dayKey)
+                                  ? "!bg-[#6D87ED] text-white"
+                                  : "!bg-white text-gray-500 border border-gray-300 hover:border-[#6D87ED] hover:text-[#6D87ED]"
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
 
-                    {selectedDays.length === 0 && (
-                      <p className="text-xs text-gray-400">위에서 날짜를 먼저 선택해주세요</p>
+                    {repeatDays.length === 0 && (
+                      <p className="text-xs text-gray-400">위에서 반복 요일을 먼저 선택해주세요</p>
                     )}
                   </div>
                 ))}
