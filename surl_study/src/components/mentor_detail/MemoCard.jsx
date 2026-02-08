@@ -18,14 +18,18 @@ export default function MemoCard({ memos, onAddMemo }) {
           </button>
       </div>
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
-        {memos.map((m, idx) => (
-          <li key={idx} className="flex items-center gap-2 px-3 py-3 text-sm text-gray-800">
-            <span>🌿</span>
-            <span className="min-w-0">{m}</span>
-          </li>
-        ))}
-      </ul>
+      {memos.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-4">메모가 없습니다.</p>
+      ) : (
+        <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+          {memos.map((m, idx) => (
+            <li key={m.memoId ?? idx} className="flex items-center gap-2 px-3 py-3 text-sm text-gray-800">
+              <span>🌿</span>
+              <span className="min-w-0">{m.content}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
     </>
   );

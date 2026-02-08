@@ -1,6 +1,32 @@
 import { apiClient } from "./client";
 
 /**
+ * GET /api/v1/mentor/mentees/{menteeId}/memos?limit=5
+ * 홈화면 메모카드 (최대 5개)
+ *
+ * 응답: { status, message, data: { items: [{ memoId, content, createdAt }] } }
+ */
+export function getMentorMemos(token, menteeId, limit = 5) {
+  return apiClient(`/api/v1/mentor/mentees/${menteeId}/memos?limit=${limit}`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
+ * GET /api/v1/mentor/mentees/{menteeId}/memos
+ * 메모 전체 조회 (화살표 눌렀을 때)
+ *
+ * 응답: { status, message, data: { items: [{ memoId, content, createdAt }] } }
+ */
+export function getAllMentorMemos(token, menteeId) {
+  return apiClient(`/api/v1/mentor/mentees/${menteeId}/memos`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
  * GET /api/v1/study/daily?menteeId={menteeId}&date={date}
  * 멘티 홈화면: 특정 날짜의 todo 리스트 조회
  * 멘티 달력화면: 특정 날짜 선택 시 todo 리스트 조회

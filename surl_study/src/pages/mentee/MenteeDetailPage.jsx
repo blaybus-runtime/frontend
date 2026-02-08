@@ -12,7 +12,7 @@ import MemoCard from "../../components/mentor_detail/MemoCard";
 import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
 import { useAuth } from "../../context/AuthContext";
-import { getMenteeDailyPlan, getStudyDaily } from "../../api/task";
+import { getMenteeDailyPlan, getStudyDaily, getMentorMemos } from "../../api/task";
 import { getMyMentees } from "../../api/matching";
 
 // 과목 목록 → 전형 표시 텍스트 변환
@@ -21,7 +21,6 @@ function formatSubjects(subjects) {
   return subjects.join(", ");
 }
 
-const initialMemos = ["후반 집중력 키우기", "중요단어 지문 반복 복습 우선", "오답은 개념 복습보다 지문 구조 파악 지점에서 주로 발생", "단기 목표 지문 처리 시간 단축"];
 
 const subjectStyle = (subject) => {
   switch (subject) {
@@ -77,7 +76,7 @@ export default function MentorMenteeDetailPage() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pendingFeedback, setPendingFeedback] = useState([]);
-  const [memos, setMemos] = useState(initialMemos);
+  const [memos, setMemos] = useState([]);
   const [openCreate, setOpenCreate] = useState(false);
   const [mentee, setMentee] = useState({
     id: menteeId,
@@ -114,6 +113,17 @@ export default function MentorMenteeDetailPage() {
       })
       .catch((err) => console.error("멘티 정보 조회 실패:", err));
   }, [menteeId, token]);
+
+  // 메모 조회 (최대 5개)
+  useEffect(() => {
+    if (!token) return;
+    getMentorMemos(token, menteeId)
+      .then((res) => {
+        const items = res.data?.items ?? [];
+        setMemos(items);
+      })
+      .catch((err) => console.error("메모 조회 실패:", err));
+  }, [token, menteeId]);
 
   // API에서 할 일 데이터 조회 (멘토 API + study/daily API로 worksheet 병합)
   const fetchDailyTodos = useCallback(async (date) => {
@@ -192,7 +202,7 @@ export default function MentorMenteeDetailPage() {
   const addMemo = (text) => {
     const v = text.trim();
     if (!v) return;
-    setMemos((prev) => [v, ...prev]);
+    setMemos((prev) => [{ content: v, createdAt: new Date().toISOString() }, ...prev]);
   };
 
   const CustomDateInput = forwardRef(({ value, onClick }, ref) => (
