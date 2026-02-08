@@ -135,20 +135,24 @@ export default function MentorMenteeDetailPage() {
         getStudyDaily(token, menteeId, date).catch(() => null),
       ]);
 
-      // study/daily에서 worksheet 맵 구성 (taskId → worksheets[])
+      // study/daily에서 worksheet 맵 + submission 맵 구성
       const worksheetMap = {};
+      const submittedMap = {};
       if (studyJson) {
         const studyData = studyJson.data ?? studyJson;
         const studyTodos = studyData.todos ?? (Array.isArray(studyData) ? studyData : []);
         for (const t of studyTodos) {
           const tid = t.id ?? t.taskId;
-          if (tid && t.worksheets?.length > 0) {
-            worksheetMap[tid] = t.worksheets.map((w) => ({
-              worksheetId: w.worksheetId,
-              title: w.title,
-              subject: w.subject,
-              fileUrl: w.fileUrl,
-            }));
+          if (tid) {
+            submittedMap[tid] = t.isSubmitted ?? false;
+            if (t.worksheets?.length > 0) {
+              worksheetMap[tid] = t.worksheets.map((w) => ({
+                worksheetId: w.worksheetId,
+                title: w.title,
+                subject: w.subject,
+                fileUrl: w.fileUrl,
+              }));
+            }
           }
         }
       }
@@ -167,6 +171,7 @@ export default function MentorMenteeDetailPage() {
           date: date,
           taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
           feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
+          isSubmitted: submittedMap[tid] ?? false,
           worksheets: worksheetMap[tid] || [],
         };
       });

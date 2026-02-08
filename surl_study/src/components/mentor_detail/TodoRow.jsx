@@ -57,10 +57,16 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className={`mt-3 text-right text-xs font-medium ${item.taskDone ? "text-emerald-500" : "text-gray-400"}`}>
-            {item.taskDone ? "과제 완료" : "과제 미완료"}
+          {/* 과제 제출 상태 */}
+          <div className={`text-right text-xs font-medium ${item.isSubmitted ? "text-[#6D87ED]" : "text-[#F59E0B]"}`}>
+            {item.isSubmitted ? "과제 제출" : "과제 미제출"}
           </div>
-          <div className={`mt-3 text-right text-xs font-medium ${
+
+          {/* 구분선 */}
+          <div className="h-3.5 w-px bg-gray-300" />
+
+          {/* 피드백 상태 */}
+          <div className={`text-right text-xs font-medium ${
             item.feedbackDone
               ? "text-indigo-500"
               : item.taskDone

@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import MentorFeedback from "../../components/mentee/MentorFeedback";
+import { useAuth } from "../../context/AuthContext";
+import { downloadWorksheets, getTaskDetail, submitFiles } from "../../api/task";
 
 // 과목별 태그 색상 매핑
 const SUBJECT_COLORS = {
@@ -14,28 +16,68 @@ const SUBJECT_COLORS = {
 export default function TaskDetailPage() {
   const { taskId } = useParams();
   const location = useLocation();
+  const { token } = useAuth();
+  const [downloading, setDownloading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const taskFromState = location.state?.task;
 
-  // API에서 전달받은 subject, taskTitle, goal 사용
+  // API에서 가져온 상세 데이터
+  const [worksheets, setWorksheets] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+
+  // 기본 정보 (navigation state에서)
   const subject = taskFromState?.subject || "국어";
   const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
   const taskTitle = taskFromState?.taskTitle || "";
   const goal = taskFromState?.goal || "";
   const content = taskFromState?.title || "";
-  const worksheets = taskFromState?.worksheets || [];
 
-  const learningContent = {
-    activeTab: "학습 내용 공유",
-    attachments: worksheets,
+  // Task 상세 조회 (학습지 + 제출물)
+  const fetchTaskDetail = useCallback(async () => {
+    if (!token || !taskId) return;
+    try {
+      const res = await getTaskDetail(token, taskId);
+      const data = res.data || res;
+      setWorksheets(data.worksheets || []);
+      setSubmissions(data.submissions || []);
+    } catch (err) {
+      console.error("할일 상세 조회 실패:", err);
+    }
+  }, [token, taskId]);
+
+  useEffect(() => {
+    fetchTaskDetail();
+  }, [fetchTaskDetail]);
+
+  // 학습 자료 다운로드
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadWorksheets(token, taskId);
+    } catch (err) {
+      console.error("학습 자료 다운로드 실패:", err);
+      alert("학습 자료 다운로드에 실패했습니다.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  const [task] = useState({
-    subject,
-    subjectColor,
-    teacherName: `${taskTitle}`,
-    taskTitle: goal ? `${subject} ${goal}` : content,
-    learningContent,
-  });
+  // 학습 내용 파일 제출
+  const handleSubmitFiles = async (files) => {
+    if (uploading) return;
+    setUploading(true);
+    try {
+      await submitFiles(token, taskId, files);
+      // 제출 후 목록 새로고침
+      await fetchTaskDetail();
+    } catch (err) {
+      console.error("파일 제출 실패:", err);
+      alert("파일 제출에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,18 +89,24 @@ export default function TaskDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${task.subjectColor}`}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${subjectColor}`}
               >
-                {task.subject}
+                {subject}
               </span>
               <h1 className="text-2xl font-bold text-gray-900">
-                {task.teacherName}
+                {taskTitle}
               </h1>
             </div>
-            <p className="mt-1.5 pl-1 text-sm text-gray-400">{task.taskTitle}</p>
+            <p className="mt-1.5 pl-1 text-sm text-gray-400">
+              {goal ? `${subject} ${goal}` : content}
+            </p>
           </div>
 
-          <button className="flex items-center gap-2 rounded-full !bg-[#6D87ED] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5a74d4]">
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 rounded-full !bg-[#6D87ED] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5a74d4] disabled:opacity-50"
+          >
             <svg
               width="16"
               height="16"
@@ -88,7 +136,7 @@ export default function TaskDetailPage() {
                 strokeLinejoin="round"
               />
             </svg>
-            학습 자료
+            {downloading ? "다운로드 중..." : "학습 자료"}
           </button>
         </div>
       </div>
@@ -97,7 +145,12 @@ export default function TaskDetailPage() {
       <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[2fr_3fr]">
           {/* 왼쪽: 학습 내용 */}
-          <LearningContent data={task.learningContent} />
+          <LearningContent
+            worksheets={worksheets}
+            submissions={submissions}
+            onSubmitFiles={handleSubmitFiles}
+            uploading={uploading}
+          />
 
           {/* 오른쪽: 멘토 피드백 + 댓글 */}
           <MentorFeedback taskId={taskId} />

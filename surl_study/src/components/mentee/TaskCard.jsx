@@ -4,7 +4,10 @@ export default function TaskCard({ task }) {
   const navigate = useNavigate();
 
   const feedbackDone = task.feedbackDone ?? false;
-  const statusText = feedbackDone ? "피드백 완료" : "피드백 대기";
+  const isSubmitted = task.isSubmitted ?? false;
+
+  const feedbackText = feedbackDone ? "피드백 완료" : "피드백 대기";
+  const submissionText = isSubmitted ? "과제 제출" : "과제 미제출";
 
   return (
     <div
@@ -46,8 +49,36 @@ export default function TaskCard({ task }) {
           )}
         </div>
 
-        {/* Right - 피드백 상태만 표시 */}
-        <div className="flex flex-col items-end justify-center">
+        {/* Right - 과제 제출 상태 + 피드백 상태 (좌우 배치) */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* 과제 제출 상태 */}
+          <div className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+            isSubmitted
+                ? "!text-[#6D87ED]"
+                : "!text-[#F59E0B]"
+          }`}>
+            <span aria-hidden>
+              {isSubmitted ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <polyline points="9 15 12 18 16 12"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+              )}
+            </span>
+            <span>{submissionText}</span>
+          </div>
+
+          {/* 구분선 */}
+          <div className="h-3.5 w-px bg-gray-300" />
+
+          {/* 피드백 상태 */}
           <div className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
             feedbackDone
                 ? "!text-[#8CA3FF]"
@@ -60,7 +91,7 @@ export default function TaskCard({ task }) {
               <path d="M4.84131 8.5L10.8413 8.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </span>
-            <span>{statusText}</span>
+            <span>{feedbackText}</span>
           </div>
         </div>
       </div>

@@ -83,6 +83,7 @@ export default function MainPage() {
         title: t.content,
         done: t.isCompleted,
         feedbackDone: t.isFeedbackDone ?? t.isFeedbackCompleted ?? false,
+        isSubmitted: t.isSubmitted ?? false,
         subject: t.subject,
         taskTitle: t.title,
         goal: t.goal,

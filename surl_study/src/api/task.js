@@ -299,3 +299,86 @@ export function createComment(token, body) {
     body,
   });
 }
+
+/**
+ * GET /api/v1/tasks/{taskId}
+ * Todo 상세 조회 (학습지 + 제출물 포함)
+ *
+ * 응답: { data: { taskId, content, subject, feedbackContent, worksheets: [...], submissions: [...] } }
+ */
+export function getTaskDetail(token, taskId) {
+  return apiClient(`/api/v1/tasks/${taskId}`, {
+    method: "GET",
+    token,
+  });
+}
+
+/**
+ * POST /api/v1/mentee/study/tasks/{taskId}/submissions
+ * 멘티 학습 내용 파일 제출 (multipart/form-data)
+ *
+ * form fields: files (multiple)
+ * 응답: { assignmentId, menteeId, taskId, status, submittedAt, files: [...] }
+ */
+export async function submitFiles(token, taskId, files) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+  const formData = new FormData();
+  files.forEach((f) => formData.append("files", f));
+
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/mentee/study/tasks/${taskId}/submissions`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    const err = new Error(json.message || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.data = json;
+    throw err;
+  }
+
+  return json;
+}
+
+/**
+ * GET /api/v1/tasks/{taskId}/worksheets/download
+ * 멘토가 등록한 학습지를 zip으로 일괄 다운로드
+ */
+export async function downloadWorksheets(token, taskId) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/tasks/${taskId}/worksheets/download`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+
+  const disposition = res.headers.get("Content-Disposition");
+  const filename = disposition?.match(/filename="?(.+?)"?$/)?.[1] || `worksheets_${taskId}.zip`;
+  a.download = filename;
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
