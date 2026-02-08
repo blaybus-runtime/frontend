@@ -67,7 +67,7 @@ function Feedback({ status }) {
   );
 }
 
-function WeekHeader({ selectedDate }) {
+function WeekHeader({ selectedDate, onSelectDate }) {
   const start = new Date(selectedDate);
   start.setDate(selectedDate.getDate() - selectedDate.getDay());
 
@@ -84,7 +84,11 @@ function WeekHeader({ selectedDate }) {
       {days.map((d, i) => {
         const isSel = ymd(d) === selKey;
         return (
-          <div key={i} className="flex w-10 flex-col items-center gap-2">
+          <button
+            key={i}
+            className="flex w-10 flex-col items-center gap-2 cursor-pointer bg-transparent border-none p-0"
+            onClick={() => onSelectDate?.(d)}
+          >
             <div className="text-[12px] font-medium text-slate-400">{DOW[i]}</div>
             <div
               className={[
@@ -94,17 +98,17 @@ function WeekHeader({ selectedDate }) {
             >
               {d.getDate()}
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
   );
 }
 
-export default function TaskPanel({ selectedDate, tasks }) {
+export default function TaskPanel({ selectedDate, tasks, onSelectDate }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_2px_14px_rgba(15,23,42,0.06)]">
-      <WeekHeader selectedDate={selectedDate} />
+      <WeekHeader selectedDate={selectedDate} onSelectDate={onSelectDate} />
 
       <div className="flex flex-col gap-4">
         {tasks.map((t) => (

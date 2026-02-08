@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MonthlyCalendar from "./components/MonthlyCalendar.jsx";
 import MonthPickerPopover from "./components/MonthPickerPopover.jsx";
 import TaskPanel from "./components/TaskPanel.jsx";
 import GlobalPopup from "./components/GlobalPopup.jsx";
 import Header from "../../components/common/Header";
+import { useAuth } from "../../context/AuthContext";
+import { getStudyDaily } from "../../api/task";
 
 const ymd = (d) => {
   const y = d.getFullYear();
@@ -25,31 +27,50 @@ const progressByDate = {
   "2025-02-09": 1.0,
 };
 
-// 데모: 우측 리스트
-const tasksByDate = {
-  "2025-02-07": [
-    { id: 1, subject: "국어", title: "강지현 국어", feedback: "피드백 완료", done: true },
-    { id: 2, subject: "국어", title: "독서2 지문", feedback: "피드백 완료", done: true },
-    { id: 3, subject: "기타", title: "플래너 업로드", feedback: "피드백 완료", done: true },
-    { id: 4, subject: "영어", title: "단어 암기", feedback: "피드백 대기", done: true },
-    { id: 5, subject: "영어", title: "단어 시험", feedback: "피드백 대기", done: false },
-    { id: 6, subject: "수학", title: "수학 오답노트", feedback: "피드백 대기", done: false },
-    { id: 7, subject: "수학", title: "수학 오답노트", feedback: "피드백 대기", done: false },
-  ],
-};
-
 export default function CalendarPage() {
-  const [selected, setSelected] = useState(new Date(2025, 1, 7));
-  const [viewYear, setViewYear] = useState(2025);
-  const [viewMonth0, setViewMonth0] = useState(1);
+  const today = new Date();
+  const [selected, setSelected] = useState(today);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth0, setViewMonth0] = useState(today.getMonth());
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const anchorRef = useRef(null);
 
   const [popupOpen, setPopupOpen] = useState(false);
 
+  const [tasks, setTasks] = useState([]);
+  const { token, user } = useAuth();
+
   const key = useMemo(() => ymd(selected), [selected]);
-  const tasks = tasksByDate[key] ?? [];
+
+  useEffect(() => {
+    if (!user?.userId || !token) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const json = await getStudyDaily(token, user.userId, key);
+        if (cancelled) return;
+        const data = json.data ?? json;
+        const todos = data.todos ?? [];
+        setTasks(
+          todos.map((t) => ({
+            id: t.id,
+            subject: t.subject ?? "기타",
+            title: t.content ?? t.title,
+            feedback: t.isFeedbackDone || t.isFeedbackCompleted ? "피드백 완료" : "피드백 대기",
+            done: !!t.isCompleted,
+          }))
+        );
+      } catch (err) {
+        if (!cancelled) {
+          console.error("캘린더 할 일 API 호출 실패:", err);
+          setTasks([]);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [key, token, user]);
 
   const onPickDate = (d) => {
     setSelected(d);
@@ -108,7 +129,7 @@ export default function CalendarPage() {
 
           {/* 우측 패널 */}
           <div className="w-[420px]">
-            <TaskPanel selectedDate={selected} tasks={tasks} />
+            <TaskPanel selectedDate={selected} tasks={tasks} onSelectDate={onPickDate} />
           </div>
         </div>
       </main>
