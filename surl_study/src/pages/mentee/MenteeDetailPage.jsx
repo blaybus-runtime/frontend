@@ -83,6 +83,7 @@ export default function MentorMenteeDetailPage() {
     name: `멘티 ${menteeId}`,
     school: "",
     track: "",
+    targetUniv: "",
   });
 
   // 멘티 프로필 정보 로드 — 항상 API 호출하여 최신 정보 반영
@@ -108,6 +109,7 @@ export default function MentorMenteeDetailPage() {
               ? `${found.highSchool}${found.grade ? ` ${found.grade}학년` : ""}`
               : "",
             track: formatSubjects(found.subjects),
+            targetUniv: found.targetUniv || "",
           });
         }
       })
@@ -171,7 +173,7 @@ export default function MentorMenteeDetailPage() {
           date: date,
           taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
           feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
-          isSubmitted: submittedMap[tid] ?? false,
+          isSubmitted: t.isSubmitted ?? submittedMap[tid] ?? false,
           worksheets: worksheetMap[tid] || [],
         };
       });
@@ -241,7 +243,7 @@ export default function MentorMenteeDetailPage() {
               </div>
             </div>
             <p className="mt-1.5 pl-1 text-sm text-gray-400">
-              {[mentee.school, mentee.track].filter(Boolean).join(" | ") || "정보 없음"}
+              {[mentee.school, mentee.track, mentee.targetUniv].filter(Boolean).join(" | ") || "정보 없음"}
             </p>
           </div>
           <button
