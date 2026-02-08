@@ -7,7 +7,13 @@ import { useAuth } from "../../context/AuthContext";
 import { createTaskBatch, createMenteeTaskBatch, uploadMentorWorksheet, uploadMenteeWorksheet } from "../../api/task";
 import { getMyMentees } from "../../api/matching";
 
-const SUBJECTS = ["국어", "영어", "수학"];
+const SUBJECTS = ["국어", "영어", "수학", "기타"];
+const SUBJECT_STYLE = {
+  국어: "!bg-amber-50 !text-amber-700 ring-1 ring-amber-300",
+  영어: "!bg-rose-50 !text-rose-700 ring-1 ring-rose-300",
+  수학: "!bg-emerald-50 !text-emerald-700 ring-1 ring-emerald-300",
+  기타: "!bg-indigo-50 !text-indigo-700 ring-1 ring-indigo-300",
+};
 const WEEKDAYS = [
   { key: 0, label: "일" },
   { key: 1, label: "월" },
@@ -28,33 +34,27 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
   const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
-  // 날짜 범위 선택
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
     return d;
   });
-  // 반복 요일 설정 (0=일, 1=월, ... 6=토)
-  const todayKey = new Date().getDay(); // 0(일)~6(토)
+  const todayKey = new Date().getDay();
   const [repeatDays, setRepeatDays] = useState([todayKey]);
-  // 다중 파일: [{ file, days: [] }, ...]
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const fileRef = useRef(null);
 
-  // 멘토용: 멘티 목록 & 선택된 멘티
+  // 멘토용
   const [mentees, setMentees] = useState([]);
   const [selectedMenteeId, setSelectedMenteeId] = useState(fixedMenteeId ? String(fixedMenteeId) : "");
   const isMentor = user?.role === "MENTOR";
-
   const today = new Date().toISOString().split("T")[0];
 
-  // 멘토 로그인 시 멘티 목록 조회
   useEffect(() => {
     if (!isMentor || !token) return;
-
     getMyMentees(token, today)
       .then((res) => {
         const list = (res.data ?? res) || [];
@@ -80,13 +80,15 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       const newFiles = selected.map((f) => ({ file: f, days: [] }));
       setFiles((prev) => [...prev, ...newFiles]);
     }
-    // input 초기화 (같은 파일 재선택 가능)
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const handleRemoveFile = (index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
+
+  // 파일별 요일 드롭다운 토글
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const toggleFileDay = (fileIndex, dayKey) => {
     if (!repeatDays.includes(dayKey)) return;
@@ -104,6 +106,17 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
     );
   };
 
+  const getFileDaysLabel = (item) => {
+    if (item.days.length === 0) return "요일 선택";
+    return item.days.map((k) => WEEKDAYS.find((w) => w.key === k)?.label).join(", ");
+  };
+
+  const getFileExtension = (filename) => {
+    const ext = filename.split(".").pop().toUpperCase();
+    if (["PDF", "PNG", "JPG", "JPEG", "DOC", "DOCX", "HWP"].includes(ext)) return ext;
+    return "FILE";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -111,17 +124,14 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       setError("할일을 추가할 멘티를 선택해주세요.");
       return;
     }
-
     if (!subject || !title || !goal) {
-      setError("과목, 할일, 목표를 모두 입력해주세요.");
+      setError("과목, 제목, 목표를 모두 입력해주세요.");
       return;
     }
-
     if (!startDate || !endDate) {
       setError("시작일과 종료일을 선택해주세요.");
       return;
     }
-
     if (repeatDays.length === 0) {
       setError("반복 요일을 하나 이상 선택해주세요.");
       return;
@@ -131,7 +141,6 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
     setLoading(true);
 
     try {
-      // 1) 모든 파일을 먼저 worksheet로 업로드 → worksheetId 획득
       const uploadFn = isMentor ? uploadMentorWorksheet : uploadMenteeWorksheet;
       const uploadedFiles = [];
 
@@ -153,7 +162,6 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
         }
       }
 
-      // 2) 백엔드 요청 body 구성
       const weekdayLabels = { 0: "일", 1: "월", 2: "화", 3: "수", 4: "목", 5: "금", 6: "토" };
       const weekdays = repeatDays.map((k) => weekdayLabels[k]);
 
@@ -169,8 +177,7 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
 
       let res;
       if (isMentor) {
-        const menteeId = Number(selectedMenteeId);
-        body.menteeId = menteeId;
+        body.menteeId = Number(selectedMenteeId);
         res = await createTaskBatch(token, body);
       } else {
         res = await createMenteeTaskBatch(token, body);
@@ -192,24 +199,19 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-2xl rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">할일 추가</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-          >
-            &times;
-          </button>
+        {/* 헤더 */}
+        <div className="px-8 pt-8 pb-2">
+          <h2 className="text-xl font-bold text-gray-900">할일 추가</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* 멘토용: 멘티 선택 (fixedMenteeId가 있으면 숨김) */}
+        <form onSubmit={handleSubmit} className="px-8 pb-8">
+          {/* 멘토용: 멘티 선택 */}
           {isMentor && !fixedMenteeId && (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">멘티 선택</label>
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-semibold text-gray-800">멘티 선택</label>
               <select
                 value={selectedMenteeId}
                 onChange={(e) => setSelectedMenteeId(e.target.value)}
@@ -225,19 +227,21 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
             </div>
           )}
 
-          {/* 과목 선택 */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">과목</label>
+          {/* 과목 */}
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-semibold text-gray-800">
+              과목 <span className="text-red-500">*</span>
+            </label>
             <div className="flex flex-wrap gap-2">
               {SUBJECTS.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => setSubject(s)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+                  className={`rounded-lg px-5 py-2 text-sm font-medium transition-all ${
                     subject === s
-                      ? "!bg-[#6D87ED] text-white"
-                      : "!bg-gray-100 text-gray-600 hover:!bg-gray-200"
+                      ? SUBJECT_STYLE[s]
+                      : "!bg-gray-100 text-gray-500 hover:!bg-gray-200"
                   }`}
                 >
                   {s}
@@ -246,62 +250,65 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
             </div>
           </div>
 
-          {/* 날짜 범위 선택 */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              날짜 <span className="text-rose-500">*</span>
+          {/* 날짜 + 반복 요일 (같은 줄) */}
+          <div className="mt-5 flex gap-6">
+            <div className="flex-1">
+              <label className="mb-2 block text-sm font-semibold text-gray-800">
+                날짜 <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(d) => setStartDate(d)}
+                    locale={ko}
+                    dateFormat="yyyy.MM.dd"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#6D87ED]"
+                  />
+                </div>
+                <span className="text-gray-400">~</span>
+                <div className="flex-1">
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(d) => setEndDate(d)}
+                    locale={ko}
+                    dateFormat="yyyy.MM.dd"
+                    minDate={startDate}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#6D87ED]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-gray-800">반복 요일 설정</label>
+              <div className="flex gap-1">
+                {WEEKDAYS.map((w) => (
+                  <button
+                    key={w.key}
+                    type="button"
+                    onClick={() => toggleRepeatDay(w.key)}
+                    className={`h-10 w-10 rounded-lg text-sm font-medium transition-all ${
+                      repeatDays.includes(w.key)
+                        ? "!bg-[#6D87ED] text-white"
+                        : "!bg-gray-100 text-gray-500 hover:!bg-gray-200"
+                    }`}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 제목 */}
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-semibold text-gray-800">
+              제목 <span className="text-red-500">*</span>
             </label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <DatePicker
-                  selected={startDate}
-                  onChange={(d) => setStartDate(d)}
-                  locale={ko}
-                  dateFormat="yyyy.MM.dd"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
-                />
-              </div>
-              <span className="text-gray-400">~</span>
-              <div className="flex-1">
-                <DatePicker
-                  selected={endDate}
-                  onChange={(d) => setEndDate(d)}
-                  locale={ko}
-                  dateFormat="yyyy.MM.dd"
-                  minDate={startDate}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 반복 요일 설정 */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">반복 요일 설정</label>
-            <div className="flex gap-1.5">
-              {WEEKDAYS.map((w) => (
-                <button
-                  key={w.key}
-                  type="button"
-                  onClick={() => toggleRepeatDay(w.key)}
-                  className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
-                    repeatDays.includes(w.key)
-                      ? "!bg-[#6D87ED] text-white"
-                      : "!bg-gray-100 text-gray-600 hover:!bg-gray-200"
-                  }`}
-                >
-                  {w.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 할일 제목 */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">할일</label>
             <input
               type="text"
-              placeholder="예: 단어 암기 30개"
+              placeholder="예: 강지영 국어"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
@@ -309,29 +316,99 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
           </div>
 
           {/* 목표 */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">목표</label>
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-semibold text-gray-800">
+              목표 <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              placeholder="예: 영단어 Day 15 완료"
+              placeholder="예: 강지영 국어 5p 풀기"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-[#6D87ED] focus:ring-1 focus:ring-[#6D87ED]"
             />
           </div>
 
-          {/* 다중 파일 첨부 */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              첨부파일 <span className="text-gray-400 font-normal">(선택, 다중 업로드 가능)</span>
-            </label>
+          {/* 학습지 파일 */}
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-semibold text-gray-800">학습지 파일</label>
 
-            {/* 파일 추가 버튼 */}
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-[#6D87ED] hover:text-[#6D87ED] transition-colors">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21.44 11.05L12.25 20.24C10.12 22.37 6.71 22.37 4.58 20.24C2.45 18.11 2.45 14.7 4.58 12.57L13.07 4.08C14.48 2.67 16.78 2.67 18.19 4.08C19.6 5.49 19.6 7.79 18.19 9.2L10.4 16.99C9.7 17.69 8.56 17.69 7.86 16.99C7.16 16.29 7.16 15.15 7.86 14.45L14.65 7.66" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            {/* 파일 목록 */}
+            {files.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {files.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2"
+                  >
+                    {/* 파일 정보 */}
+                    <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+                      <span className="shrink-0 rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">
+                        {getFileExtension(item.file.name)}
+                      </span>
+                      <span className="flex-1 truncate text-sm text-gray-700">
+                        {item.file.name.replace(/\.[^/.]+$/, "")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        className="ml-1 text-gray-400 hover:text-red-500"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* 요일 선택 드롭다운 */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setOpenDropdown(openDropdown === idx ? null : idx)}
+                        className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs font-medium text-gray-600 hover:bg-gray-50 whitespace-nowrap"
+                      >
+                        {getFileDaysLabel(item)}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+
+                      {openDropdown === idx && (
+                        <div className="absolute right-0 top-full z-10 mt-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                          <div className="flex gap-1">
+                            {repeatDays.map((dayKey) => {
+                              const label = WEEKDAYS.find((w) => w.key === dayKey)?.label;
+                              return (
+                                <button
+                                  key={dayKey}
+                                  type="button"
+                                  onClick={() => toggleFileDay(idx, dayKey)}
+                                  className={`h-8 w-8 rounded-md text-xs font-medium transition-all ${
+                                    item.days.includes(dayKey)
+                                      ? "!bg-[#6D87ED] text-white"
+                                      : "!bg-gray-100 text-gray-500 hover:!bg-gray-200"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 파일 추가 영역 */}
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-5 text-gray-400 hover:border-[#6D87ED] hover:text-[#6D87ED] transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              파일 선택
+              <span className="text-sm">PDF 및 칼럼 추가</span>
               <input
                 ref={fileRef}
                 type="file"
@@ -340,77 +417,31 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
                 onChange={handleFileChange}
               />
             </label>
-
-            {/* 업로드된 파일 목록 + 요일 배정 */}
-            {files.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {files.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border border-gray-200 bg-gray-50 p-3"
-                  >
-                    {/* 파일 이름 & 삭제 */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#6D87ED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span className="truncate text-sm text-gray-700">{item.file.name}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFile(idx)}
-                        className="ml-2 text-gray-400 hover:text-red-500 text-lg leading-none"
-                      >
-                        &times;
-                      </button>
-                    </div>
-
-                    {/* 요일 배정 칩 */}
-                    {repeatDays.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {repeatDays.map((dayKey) => {
-                          const label = WEEKDAYS.find((w) => w.key === dayKey)?.label;
-                          return (
-                            <button
-                              key={dayKey}
-                              type="button"
-                              onClick={() => toggleFileDay(idx, dayKey)}
-                              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
-                                item.days.includes(dayKey)
-                                  ? "!bg-[#6D87ED] text-white"
-                                  : "!bg-white text-gray-500 border border-gray-300 hover:border-[#6D87ED] hover:text-[#6D87ED]"
-                              }`}
-                            >
-                              {label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {repeatDays.length === 0 && (
-                      <p className="text-xs text-gray-400">위에서 반복 요일을 먼저 선택해주세요</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full rounded-lg py-2.5 text-sm font-bold text-white transition-all ${
-              loading
-                ? "!bg-[#B0BEE8] cursor-not-allowed"
-                : "!bg-[#6D87ED] hover:!bg-[#5a74d6] cursor-pointer"
-            }`}
-          >
-            {loading ? (files.length > 0 ? "업로드 및 추가 중..." : "추가 중...") : "추가하기"}
-          </button>
+          {/* 하단 버튼 */}
+          <div className="mt-6 flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg !bg-[#F1F1F4] py-3 text-sm font-semibold text-gray-600 hover:!bg-[#E5E5EA] transition-colors"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`flex-1 rounded-lg py-3 text-sm font-bold text-white transition-all ${
+                loading
+                  ? "!bg-[#B0BEE8] cursor-not-allowed"
+                  : "!bg-[#6D87ED] hover:!bg-[#5a74d6] cursor-pointer"
+              }`}
+            >
+              {loading ? (files.length > 0 ? "업로드 및 추가 중..." : "추가 중...") : "할 일 추가"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
