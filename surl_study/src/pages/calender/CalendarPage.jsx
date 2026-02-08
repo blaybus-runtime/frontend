@@ -60,6 +60,7 @@ export default function CalendarPage() {
             title: t.content ?? t.title,
             feedback: t.isFeedbackDone || t.isFeedbackCompleted ? "피드백 완료" : "피드백 대기",
             done: !!t.isCompleted,
+            isSubmitted: t.isSubmitted ?? false,
           }))
         );
       } catch (err) {

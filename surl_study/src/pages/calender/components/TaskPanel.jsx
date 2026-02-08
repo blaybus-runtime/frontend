@@ -26,25 +26,29 @@ function Tag({ subject }) {
   );
 }
 
-function Check({ checked, muted }) {
-  const bg = muted ? "#CBD5E1" : "#6D87ED";
+function SubmissionBadge({ isSubmitted }) {
+  const text = isSubmitted ? "과제 제출" : "과제 미제출";
+  const color = isSubmitted ? "#6D87ED" : "#F59E0B";
+
   return (
-    <span
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
-      style={{ backgroundColor: checked ? bg : "#FFFFFF", border: checked ? "none" : "1px solid #E5E7EB" }}
-    >
-      {checked && (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
-          <path
-            d="M20 7L10 17l-5-5"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </span>
+    <div className="inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color }}>
+      <span aria-hidden>
+        {isSubmitted ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <polyline points="9 15 12 18 16 12"/>
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+        )}
+      </span>
+      <span>{text}</span>
+    </div>
   );
 }
 
@@ -53,7 +57,7 @@ function Feedback({ status }) {
   const color = done ? "#6D87ED" : "#B0B8C4";
 
   return (
-    <div className="flex items-center gap-2 text-[13px] font-semibold" style={{ color }}>
+    <div className="inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color }}>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path
           d="M4 5h16v11H7l-3 3V5Z"
@@ -118,14 +122,15 @@ export default function TaskPanel({ selectedDate, tasks, onSelectDate }) {
           >
             <div className="flex items-start justify-between">
               <Tag subject={t.subject} />
-              <Check checked={t.done} muted={!t.done} />
             </div>
 
             <div className="mt-3 text-[18px] font-semibold text-slate-900">
               {t.title}
             </div>
 
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex items-center justify-end gap-3">
+              <SubmissionBadge isSubmitted={t.isSubmitted} />
+              <div className="h-3.5 w-px bg-gray-300" />
               <Feedback status={t.feedback} />
             </div>
           </div>
