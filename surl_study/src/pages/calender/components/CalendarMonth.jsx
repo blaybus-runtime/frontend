@@ -46,8 +46,8 @@ export default function CalendarMonth({
   return (
     <div className="rounded-2xl bg-white p-6 shadow-[0_2px_14px_rgba(15,23,42,0.06)]">
       <div className="grid grid-cols-7 gap-3">
-        {K_DAYS.map((d) => (
-          <div key={d} className="text-center text-xs font-medium text-slate-400">
+        {K_DAYS.map((d, i) => (
+          <div key={d} className={`text-center text-xs font-medium ${i === 0 ? "text-red-500" : "text-slate-400"}`}>
             {d}
           </div>
         ))}
@@ -84,7 +84,7 @@ export default function CalendarMonth({
               ) : null}
 
               {/* 날짜 */}
-              <div className="relative z-10 p-2">
+              <div className="absolute top-1.5 left-2 z-10">
                 <span
                   className={[
                     "text-xs",

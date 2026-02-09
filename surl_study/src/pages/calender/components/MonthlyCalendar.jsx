@@ -50,9 +50,9 @@ export default function MonthlyCalendar({
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_2px_14px_rgba(15,23,42,0.06)]">
       {/* 요일 */}
-      <div className="grid grid-cols-7 gap-4 px-2 pb-3">
-        {DAYS.map((d) => (
-          <div key={d} className="text-center text-[13px] font-medium text-slate-500">
+      <div className="grid grid-cols-7 gap-4 pb-3">
+        {DAYS.map((d, i) => (
+          <div key={d} className={`text-center text-[13px] font-medium ${i === 0 ? "text-red-500" : "text-slate-500"}`}>
             {d}
           </div>
         ))}
@@ -97,7 +97,7 @@ export default function MonthlyCalendar({
               )}
 
               {/* 날짜 */}
-              <div className="relative z-10 p-2">
+              <div className="absolute top-1.5 left-2 z-10">
                 <span
                   className={[
                     "text-[13px]",
