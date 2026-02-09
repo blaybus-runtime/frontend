@@ -5,26 +5,13 @@ import TaskPanel from "./components/TaskPanel.jsx";
 import GlobalPopup from "./components/GlobalPopup.jsx";
 import Header from "../../components/common/Header";
 import { useAuth } from "../../context/AuthContext";
-import { getStudyDaily } from "../../api/task";
+import { getStudyDaily, getStudyProgress } from "../../api/task";
 
 const ymd = (d) => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-};
-
-// 데모: 월간 박스 진척도 (0, 0.25, 0.55, 1.0)
-const progressByDate = {
-  "2025-02-01": 0.25,
-  "2025-02-02": 0.55,
-  "2025-02-03": 0.25,
-  "2025-02-04": 0.15,
-  "2025-02-05": 0.9,
-  "2025-02-06": 0.25,
-  "2025-02-07": 0.35,
-  "2025-02-08": 0.7,
-  "2025-02-09": 1.0,
 };
 
 export default function CalendarPage() {
@@ -39,10 +26,39 @@ export default function CalendarPage() {
   const [popupOpen, setPopupOpen] = useState(false);
 
   const [tasks, setTasks] = useState([]);
+  const [progressByDate, setProgressByDate] = useState({});
   const { token, user } = useAuth();
 
   const key = useMemo(() => ymd(selected), [selected]);
 
+  // 월간 진척도 API 호출
+  useEffect(() => {
+    if (!user?.userId || !token) return;
+
+    const lastDay = new Date(viewYear, viewMonth0 + 1, 0).getDate();
+    const mm = String(viewMonth0 + 1).padStart(2, "0");
+    const startDate = `${viewYear}-${mm}-01`;
+    const endDate = `${viewYear}-${mm}-${String(lastDay).padStart(2, "0")}`;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const json = await getStudyProgress(token, user.userId, startDate, endDate);
+        if (cancelled) return;
+        const stats = json.data?.dailyStats ?? [];
+        const map = {};
+        for (const s of stats) {
+          map[s.date] = s.progressRate / 100;
+        }
+        setProgressByDate(map);
+      } catch (err) {
+        if (!cancelled) console.error("진척도 API 호출 실패:", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [viewYear, viewMonth0, token, user]);
+
+  // 일별 할 일 API 호출
   useEffect(() => {
     if (!user?.userId || !token) return;
 

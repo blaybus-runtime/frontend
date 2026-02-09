@@ -27,6 +27,19 @@ export function getAllMentorMemos(token, menteeId) {
 }
 
 /**
+ * GET /api/v1/study/progress?menteeId={menteeId}&startDate={startDate}&endDate={endDate}
+ * 멘티 캘린더: 기간별 진척도 조회
+ *
+ * 응답: { status, message, data: { menteeId, period, summary, dailyStats: [{ date, hasTodo, progressRate }] } }
+ */
+export function getStudyProgress(token, menteeId, startDate, endDate) {
+  return apiClient(
+    `/api/v1/study/progress?menteeId=${menteeId}&startDate=${startDate}&endDate=${endDate}`,
+    { method: "GET", token }
+  );
+}
+
+/**
  * GET /api/v1/study/daily?menteeId={menteeId}&date={date}
  * 멘티 홈화면: 특정 날짜의 todo 리스트 조회
  * 멘티 달력화면: 특정 날짜 선택 시 todo 리스트 조회

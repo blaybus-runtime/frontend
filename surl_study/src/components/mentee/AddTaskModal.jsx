@@ -121,7 +121,7 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
     e.preventDefault();
 
     if (isMentor && !selectedMenteeId) {
-      setError("할일을 추가할 멘티를 선택해주세요.");
+      setError("할 일을 추가할 멘티를 선택해주세요.");
       return;
     }
     if (!subject || !title || !goal) {
@@ -186,8 +186,8 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       onTaskAdded?.(payload);
       onClose();
     } catch (err) {
-      console.error("할일 생성 실패:", err);
-      setError("할일 생성에 실패했습니다. 다시 시도해주세요.");
+      console.error("할 일 생성 실패:", err);
+      setError("할 일 생성에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -204,7 +204,7 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
       >
         {/* 헤더 */}
         <div className="px-8 pt-8 pb-2">
-          <h2 className="text-xl font-bold text-gray-900">할일 추가</h2>
+          <h2 className="text-xl font-bold text-gray-900">할 일 추가</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="px-8 pb-8">

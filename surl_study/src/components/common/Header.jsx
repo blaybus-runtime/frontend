@@ -63,6 +63,26 @@ export default function Header({ userName, showAvatar = true }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNotif]);
 
+  // 백엔드 URL을 프론트 라우트에 맞게 변환
+  const resolveUrl = (n) => {
+    const raw = n.url || n.relatedUrl || "";
+    const isMentor = auth.user?.role === "MENTOR";
+
+    // /tasks/{id} -> 멘티: /mentee/task/{id}, 멘토: /mentor/feedback/{id}
+    const taskMatch = raw.match(/^\/tasks\/(\d+)/);
+    if (taskMatch) {
+      const taskId = taskMatch[1];
+      return isMentor ? `/mentor/feedback/${taskId}` : `/mentee/task/${taskId}`;
+    }
+
+    // /planner?date=... -> 멘티 홈으로
+    if (raw.startsWith("/planner")) {
+      return isMentor ? "/" : "/mentee";
+    }
+
+    return raw || "/";
+  };
+
   const handleNotifClick = async (n) => {
     // 읽음 처리
     if (!n.isRead && !n.read) {
@@ -76,10 +96,7 @@ export default function Header({ userName, showAvatar = true }) {
       }
     }
     setShowNotif(false);
-    // URL로 이동
-    if (n.url || n.relatedUrl) {
-      navigate(n.url || n.relatedUrl);
-    }
+    navigate(resolveUrl(n));
   };
 
   return (
