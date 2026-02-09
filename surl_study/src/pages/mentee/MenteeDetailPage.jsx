@@ -167,8 +167,9 @@ export default function MentorMenteeDetailPage() {
       const rawTitle = t.title || t.content || "";
       const finalTitle = rawTitle.split("|").pop().trim();
 
-      const rawGoal = t.goal || "";
-      const finalGoal = rawGoal.split("|").pop().trim();
+      const rawGoal = t.goal || "목표 없음";
+
+      console.log(`ID: ${tid}, Title: ${finalTitle}, Goal: ${rawGoal}`); // 디버깅용 로그
 
       return {
         id: tid,
@@ -176,7 +177,7 @@ export default function MentorMenteeDetailPage() {
         type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
         title: finalTitle,   // ✅ "멘티 첨부파일 테스트"만 남음
         desc: "",
-        goal: finalGoal,
+        goal: rawGoal,
         date: date,
         taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
         feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
@@ -352,6 +353,7 @@ export default function MentorMenteeDetailPage() {
                       <TodoRow
                         key={t.id}
                         item={t}
+                        goal={t.goal}
                         subjectStyle={subjectStyle(t.subject)}
                         onToggleTask={() => toggleTaskDone(t.id)}
                       />

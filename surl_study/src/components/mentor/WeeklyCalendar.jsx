@@ -39,7 +39,7 @@ export default function WeeklyCalendar({ dailyStats = [], selectedDate, onSelect
         >
           <div className="text-sm text-gray-400 font-medium">{d.label}</div>
           <div
-            className={`mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+            className={`mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold transition-colors ${
               d.isSelected
                 ? "ring-2 ring-[#6D87ED] text-[#6D87ED] bg-white"
                 : d.isToday

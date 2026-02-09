@@ -24,12 +24,9 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
   </span>
 
   {item.goal && (
-    <>
-      <span className="mx-2 text-gray-500">|</span>
-      <span className="text-xs text-gray-500">
-        {item.goal}
-      </span>
-    </>
+    <span className="ml-2 text-xs text-gray-400 font-normal">
+      | {item.goal}
+    </span>
   )}
 </div>
 
@@ -56,14 +53,14 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {/* 과제 제출 상태 */}
           <div className={`text-right text-xs font-medium ${item.isSubmitted ? "text-[#6D87ED]" : "text-gray-400"}`}>
             {item.isSubmitted ? "과제 제출" : "과제 미완료"}
           </div>
 
           {/* 구분선 */}
-          <div className="h-3.5 w-px bg-gray-300" />
+          <div className="h-3 w-px bg-gray-200" />
 
           {/* 피드백 상태 */}
           <div className={`text-right text-xs font-medium ${
