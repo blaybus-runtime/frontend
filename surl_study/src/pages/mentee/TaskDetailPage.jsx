@@ -93,11 +93,11 @@ export default function TaskDetailPage() {
               >
                 {subject}
               </span>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-gray-900">
                 {taskTitle}
               </h1>
             </div>
-            <p className="mt-1.5 pl-1 text-sm text-gray-400">
+            <p className="mt-2 pl-14 text-sm text-gray-400">
               {goal ? `${subject} ${goal}` : content}
             </p>
           </div>
