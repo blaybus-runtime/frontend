@@ -13,7 +13,7 @@ import FeedbackListCard from "../../components/mentor_detail/FeedbackListCard";
 import AddTaskModal from "../../components/mentee/AddTaskModal";
 import { useAuth } from "../../context/AuthContext";
 import { getMenteeDailyPlan, getStudyDaily, getMentorMemos } from "../../api/task";
-import { getMyMentees } from "../../api/matching";
+import { getMyMentees, getPendingFeedbacksByDate } from "../../api/matching";
 
 // 과목 목록 → 전형 표시 텍스트 변환
 function formatSubjects(subjects) {
@@ -186,14 +186,9 @@ export default function MentorMenteeDetailPage() {
     });
 
       setTodos(apiTodos);
-
-      // 선택된 날짜의 미완료 피드백: 과제 완료 + 피드백 미작성
-      const pending = apiTodos.filter((t) => t.taskDone && !t.feedbackDone);
-      setPendingFeedback(pending);
     } catch (err) {
       console.error("멘티 일일 할 일 API 호출 실패:", err);
       setTodos([]);
-      setPendingFeedback([]);
     } finally {
       setLoading(false);
     }
@@ -203,6 +198,58 @@ export default function MentorMenteeDetailPage() {
   useEffect(() => {
     fetchDailyTodos(selectedDate);
   }, [selectedDate, fetchDailyTodos]);
+
+  // 미완료 피드백 조회 (이번 주 7일 각각 조회 → menteeId로 필터)
+  useEffect(() => {
+    if (!token) return;
+
+    // 이번 주 월~일 날짜 배열 생성
+    const now = new Date();
+    const day = now.getDay(); // 0(일)~6(토)
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return format(d, "yyyy-MM-dd");
+    });
+
+    // 7일 동시 조회
+    Promise.all(
+      weekDates.map((date) =>
+        getPendingFeedbacksByDate(token, date)
+          .then((res) => {
+            const list = res.data ?? [];
+            return list
+              .filter((f) => String(f.menteeId) === String(menteeId))
+              .map((f) => ({
+                id: f.taskId,
+                subject: f.subject,
+                type: "PDF",
+                title: (f.taskContent || "").split("|").pop().trim(),
+                goal: "",
+                date,
+                taskDone: true,
+                feedbackDone: false,
+              }));
+          })
+          .catch(() => [])
+      )
+    )
+      .then((results) => {
+        const merged = results.flat();
+        // taskId 기준 중복 제거
+        const seen = new Set();
+        const unique = merged.filter((f) => {
+          if (seen.has(f.id)) return false;
+          seen.add(f.id);
+          return true;
+        });
+        setPendingFeedback(unique);
+      })
+      .catch(() => setPendingFeedback([]));
+  }, [token, menteeId]);
 
   const todosOfDay = todos;
 

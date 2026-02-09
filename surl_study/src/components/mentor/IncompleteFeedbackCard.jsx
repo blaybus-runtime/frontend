@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 
 // 과목명 → 스타일 직접 매핑 (Tailwind JIT가 클래스를 감지할 수 있도록 전체 문자열 사용)
+// 여기 수정해야 함
 const subjectStyleMap = {
-  "영어": "bg-rose-50 text-rose-600",
-  "국어": "bg-emerald-50 text-emerald-600",
-  "수학": "bg-blue-50 text-blue-600",
-  "과학": "bg-purple-50 text-purple-600",
+  국어: "bg-amber-100 text-amber-700",
+  영어: "bg-rose-100 text-rose-700",
+  수학: "bg-emerald-100 text-emerald-700",
 };
 const defaultStyle = "bg-gray-100 text-gray-600";
 
