@@ -27,8 +27,8 @@ function Tag({ subject }) {
 }
 
 function SubmissionBadge({ isSubmitted }) {
-  const text = isSubmitted ? "과제 제출" : "과제 미제출";
-  const color = isSubmitted ? "#6D87ED" : "#F59E0B";
+  const text = isSubmitted ? "과제 제출" : "과제 미완료";
+  const color = isSubmitted ? "#6D87ED" : "#9CA3AF";
 
   return (
     <div className="inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color }}>

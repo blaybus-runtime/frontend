@@ -7,7 +7,7 @@ export default function TaskCard({ task }) {
   const isSubmitted = task.isSubmitted ?? false;
 
   const feedbackText = feedbackDone ? "피드백 완료" : "피드백 대기";
-  const submissionText = isSubmitted ? "과제 제출" : "과제 미제출";
+  const submissionText = isSubmitted ? "과제 제출" : "과제 미완료";
 
   return (
     <div
@@ -55,7 +55,7 @@ export default function TaskCard({ task }) {
           <div className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
             isSubmitted
                 ? "!text-[#6D87ED]"
-                : "!text-[#F59E0B]"
+                : "!text-gray-400"
           }`}>
             <span aria-hidden>
               {isSubmitted ? (

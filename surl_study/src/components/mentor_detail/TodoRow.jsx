@@ -19,20 +19,20 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
             </span>
           </div>
           <div>
-            <span className="mt-2 px-0.8 text-sm font-semibold text-gray-900">{item.title}</span>
-            {item.desc && (
-              <>
-                <span className="mx-2 text-gray-500">|</span>
-                <span className="mt-1 text-xs text-gray-500">{item.desc}</span>
-              </>
-            )}
-            {item.goal && (
-              <>
-                <span className="mx-2 text-gray-500">|</span>
-                <span className="mt-1 text-xs text-gray-500">{item.goal}</span>
-              </>
-            )}
-          </div>
+  <span className="text-sm font-semibold text-gray-900">
+    {item.title}
+  </span>
+
+  {item.goal && (
+    <>
+      <span className="mx-2 text-gray-500">|</span>
+      <span className="text-xs text-gray-500">
+        {item.goal}
+      </span>
+    </>
+  )}
+</div>
+
 
           {item.worksheets && item.worksheets.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -58,8 +58,8 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
 
         <div className="flex items-center gap-3 shrink-0">
           {/* 과제 제출 상태 */}
-          <div className={`text-right text-xs font-medium ${item.isSubmitted ? "text-[#6D87ED]" : "text-[#F59E0B]"}`}>
-            {item.isSubmitted ? "과제 제출" : "과제 미제출"}
+          <div className={`text-right text-xs font-medium ${item.isSubmitted ? "text-[#6D87ED]" : "text-gray-400"}`}>
+            {item.isSubmitted ? "과제 제출" : "과제 미완료"}
           </div>
 
           {/* 구분선 */}

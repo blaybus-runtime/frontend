@@ -162,21 +162,29 @@ export default function MentorMenteeDetailPage() {
       const list = json.data ?? json;
       const tasks = Array.isArray(list) ? list : (list.todos ?? []);
       const apiTodos = tasks.map((t) => {
-        const tid = t.taskId ?? t.id;
-        return {
-          id: tid,
-          subject: t.subject,
-          type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
-          title: t.title || t.content,
-          desc: t.content || t.title,
-          goal: t.goal || "",
-          date: date,
-          taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
-          feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
-          isSubmitted: t.isSubmitted ?? submittedMap[tid] ?? false,
-          worksheets: worksheetMap[tid] || [],
-        };
-      });
+      const tid = t.taskId ?? t.id;
+
+      const rawTitle = t.title || t.content || "";
+      const finalTitle = rawTitle.split("|").pop().trim();
+
+      const rawGoal = t.goal || "";
+      const finalGoal = rawGoal.split("|").pop().trim();
+
+      return {
+        id: tid,
+        subject: t.subject,
+        type: t.taskType === "ASSIGNMENT" ? "PDF" : "자습",
+        title: finalTitle,   // ✅ "멘티 첨부파일 테스트"만 남음
+        desc: "",
+        goal: finalGoal,
+        date: date,
+        taskDone: t.isTaskCompleted ?? t.isCompleted ?? false,
+        feedbackDone: t.isFeedbackCompleted ?? t.isFeedbackDone ?? false,
+        isSubmitted: t.isSubmitted ?? submittedMap[tid] ?? false,
+        worksheets: worksheetMap[tid] || [],
+      };
+    });
+
       setTodos(apiTodos);
 
       // 선택된 날짜의 미완료 피드백: 과제 완료 + 피드백 미작성
@@ -238,11 +246,11 @@ export default function MentorMenteeDetailPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
           <div>
             <div className="flex items-center gap-3">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-lg font-bold text-gray-900">
                 {mentee.name}
               </div>
             </div>
-            <p className="mt-1.5 pl-1 text-sm text-gray-400">
+            <p className="mt-2 pl-1 text-sm text-gray-400">
               {[mentee.school, mentee.track, mentee.targetUniv].filter(Boolean).join(" | ") || "정보 없음"}
             </p>
           </div>

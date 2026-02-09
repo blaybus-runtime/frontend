@@ -30,8 +30,12 @@ export default function FeedbackListCard({ count, items, subjectStyle, onToggleF
                   </div>
                   <div>
                     <span className="mt-2 text-sm font-semibold text-gray-900">{it.title}</span>
-                    <span className="mx-2">|</span>
-                    <span className="mt-1 text-xs text-gray-500">{it.desc}</span>                    
+                    {it.goal && (
+                      <>
+                        <span className="mx-2 text-gray-500">|</span>
+                        <span className="mt-1 text-xs text-gray-500">{it.goal}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
