@@ -124,7 +124,7 @@ export default function StudyTimeChart({
       </div>
 
       {/* 24시간 시계형 파이 차트 */}
-      <div className="relative w-full [&_path]:outline-none [&_.recharts-sector]:outline-none" style={{ height: 300 }}>
+      <div className="relative w-full [&_path]:outline-none [&_.recharts-sector]:outline-none" style={{ height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -165,7 +165,7 @@ export default function StudyTimeChart({
         >
           {Array.from({ length: 24 }, (_, i) => {
             const hour = i;
-            const labelRadius = 132;
+            const labelRadius = 120;
             const pos = getHourLabelPos(hour, labelRadius);
             // 6, 12, 18, 24(0)만 볼드 + 크게
             const isMajor = hour === 0 || hour === 6 || hour === 12 || hour === 18;

@@ -41,9 +41,9 @@ export default function WeeklyCalendar({ dailyStats = [], selectedDate, onSelect
           <div
             className={`mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
               d.isSelected
-                ? "bg-[#6D87ED] text-white"
+                ? "ring-2 ring-[#6D87ED] text-[#6D87ED] bg-white"
                 : d.isToday
-                  ? "ring-2 ring-[#6D87ED] text-[#6D87ED]"
+                  ? "bg-[#6D87ED] text-white"
                   : "text-gray-800 hover:bg-gray-100"
             }`}
           >

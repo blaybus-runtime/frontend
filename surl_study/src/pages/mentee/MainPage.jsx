@@ -187,12 +187,21 @@ export default function MainPage() {
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <StudyTimeChart timeRecords={timeRecords} />
                 </div>
-                <button
-                  onClick={() => setShowStudyTime(true)}
-                  className="mt-4 w-full rounded-lg !bg-[#6D87ED] py-3 text-sm font-semibold text-white hover:!bg-[#5A74D6] transition-colors cursor-pointer"
-                >
-                  공부 시간 기록
-                </button>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => setShowStudyTime(true)}
+                    className="flex-1 rounded-lg !bg-[#6D87ED] py-3 text-sm font-semibold text-white hover:!bg-[#5A74D6] transition-colors cursor-pointer"
+                  >
+                    공부 시간 기록
+                  </button>
+                  <button
+                    onClick={() => setShowStudyTime(true)}
+                    className="flex items-center justify-center rounded-lg border border-gray-300 bg-gray px-3.5 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                    title="수정"
+                  >
+                    <img src="/Record_modify.png" alt="수정하기" className="w-7 h-7" />
+                  </button>
+                </div>
               </div>
             </div>
 
