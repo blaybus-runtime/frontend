@@ -54,7 +54,7 @@ export default function AddMenteeModal({ isOpen, onClose, onSave }) {
             className="h-14 w-14 rounded-full"
           />
           <div className="w-32">
-            <label className="text-xs text-gray-500">멘토</label>
+            <label className="text-xs text-gray-500">멘티 이름</label>
             <input
               type="text"
               placeholder="이름"
