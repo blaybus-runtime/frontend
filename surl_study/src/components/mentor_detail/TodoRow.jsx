@@ -77,7 +77,7 @@ export default function TodoRow({ item, subjectStyle, onToggleTask }) {
               ? "피드백 완료"
               : item.taskDone
                 ? "피드백 미완료"
-                : "과제 완료 후 피드백"}
+                : "피드백 미완료"}
           </div>
         </div>
       </div>
