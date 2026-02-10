@@ -285,7 +285,7 @@ export default function MentorMainPage() {
 
             {/* RIGHT: 미완료 피드백 */}
             <section>
-              <div className="mb-3">
+              <div className="mb-5 mt-4">
                 <h2 className="text-lg font-semibold">미완료 피드백</h2>
               </div>
 

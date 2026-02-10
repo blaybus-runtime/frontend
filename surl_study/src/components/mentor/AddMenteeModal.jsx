@@ -11,13 +11,15 @@ export default function AddMenteeModal({ isOpen, onClose, onSave }) {
     email: "",
     examTypes: [],
   });
+  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
-  const hasInput = form.name || form.phone || form.school || form.grade || form.email || form.examTypes.length > 0;
+  const allFilled = form.name.trim() && form.phone.trim() && form.school.trim() && form.grade.trim() && form.email.trim() && form.examTypes.length > 0;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (error) setError("");
   };
 
   const toggleExamType = (type) => {
@@ -27,15 +29,22 @@ export default function AddMenteeModal({ isOpen, onClose, onSave }) {
         ? prev.examTypes.filter((t) => t !== type)
         : [...prev.examTypes, type],
     }));
+    if (error) setError("");
   };
 
   const handleSave = () => {
+    if (!allFilled) {
+      setError("멘티의 모든 정보를 입력해주세요");
+      return;
+    }
     onSave(form);
     setForm({ name: "", phone: "", school: "", grade: "", email: "", examTypes: [] });
+    setError("");
   };
 
   const handleCancel = () => {
     setForm({ name: "", phone: "", school: "", grade: "", email: "", examTypes: [] });
+    setError("");
     onClose();
   };
 
@@ -138,6 +147,11 @@ export default function AddMenteeModal({ isOpen, onClose, onSave }) {
           </div>
         </div>
 
+        {/* 에러 메시지 */}
+        {error && (
+          <p className="mb-3 text-center text-sm text-red-500">{error}</p>
+        )}
+
         {/* 하단 버튼 */}
         <div className="flex gap-3">
           <button
@@ -148,9 +162,8 @@ export default function AddMenteeModal({ isOpen, onClose, onSave }) {
           </button>
           <button
             onClick={handleSave}
-            disabled={!hasInput}
             className={`flex-1 rounded-xl py-3 text-sm font-semibold text-white transition-colors ${
-              hasInput ? "opacity-100" : "opacity-50"
+              allFilled ? "opacity-100" : "opacity-50"
             }`}
             style={{ backgroundColor: "#6D87ED" }}
           >

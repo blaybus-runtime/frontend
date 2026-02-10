@@ -4,6 +4,12 @@ import { recordStudyTime } from "../../api/task";
 
 const SUBJECTS = ["국어", "수학", "영어"];
 
+const SUBJECT_COLORS = {
+  국어: { bg: "#FFF8E1", text: "#B8860B", border: "#F0E0A0" },
+  수학: { bg: "#E8F5E9", text: "#2E7D32", border: "#A5D6A7" },
+  영어: { bg: "#FCE4EC", text: "#C62828", border: "#F48FB1" },
+};
+
 export default function StudyTimeModal({ onClose, onRecorded, plannerId }) {
   const { token } = useAuth();
 
@@ -129,20 +135,25 @@ export default function StudyTimeModal({ onClose, onRecorded, plannerId }) {
         <div className="mb-5">
           <label className="mb-2 block text-sm font-medium text-gray-700">과목</label>
           <div className="flex flex-wrap gap-2">
-            {SUBJECTS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSubject(s)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                  subject === s
-                    ? "!bg-[#6D87ED] text-white"
-                    : "!bg-gray-100 text-gray-600 hover:!bg-gray-200"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+            {SUBJECTS.map((s) => {
+              const colors = SUBJECT_COLORS[s];
+              const isSelected = subject === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSubject(s)}
+                  className="rounded-lg px-5 py-2 text-sm font-medium transition-all"
+                  style={
+                    isSelected
+                      ? { backgroundColor: colors.bg, color: colors.text, border: `1.5px solid ${colors.border}` }
+                      : { backgroundColor: "#F3F4F6", color: "#6B7280", border: "1.5px solid transparent" }
+                  }
+                >
+                  {s}
+                </button>
+              );
+            })}
           </div>
         </div>
 
