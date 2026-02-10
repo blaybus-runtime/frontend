@@ -7,6 +7,13 @@ import Header from "../../components/common/Header";
 import { useAuth } from "../../context/AuthContext";
 import { getStudyDaily, getStudyProgress } from "../../api/task";
 
+const SUBJECT_COLORS = {
+  국어: "bg-amber-100 text-amber-700",
+  영어: "bg-rose-100 text-rose-700",
+  수학: "bg-emerald-100 text-emerald-700",
+};
+const DEFAULT_TAG_COLOR = "bg-gray-100 text-gray-700";
+
 const ymd = (d) => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -27,6 +34,7 @@ export default function CalendarPage() {
 
   const [tasks, setTasks] = useState([]);
   const [progressByDate, setProgressByDate] = useState({});
+  const [dailyStats, setDailyStats] = useState([]);
   const { token, user } = useAuth();
 
   const key = useMemo(() => ymd(selected), [selected]);
@@ -51,6 +59,7 @@ export default function CalendarPage() {
           map[s.date] = s.progressRate / 100;
         }
         setProgressByDate(map);
+        setDailyStats(stats);
       } catch (err) {
         if (!cancelled) console.error("진척도 API 호출 실패:", err);
       }
@@ -70,14 +79,23 @@ export default function CalendarPage() {
         const data = json.data ?? json;
         const todos = data.todos ?? [];
         setTasks(
-          todos.map((t) => ({
-            id: t.id,
-            subject: t.subject ?? "기타",
-            title: t.content ?? t.title,
-            feedback: t.isFeedbackDone || t.isFeedbackCompleted ? "피드백 완료" : "피드백 대기",
-            done: !!t.isCompleted,
-            isSubmitted: t.isSubmitted ?? false,
-          }))
+          todos.map((t) => {
+            const subject = t.subject ?? "기타";
+            return {
+              id: t.id,
+              tag: subject,
+              tagColor: SUBJECT_COLORS[subject] || DEFAULT_TAG_COLOR,
+              title: t.title ?? t.content,
+              done: !!t.isCompleted,
+              feedbackDone: t.isFeedbackDone ?? t.isFeedbackCompleted ?? false,
+              isSubmitted: t.isSubmitted ?? false,
+              worksheets: (t.worksheets ?? []).map((w) => ({
+                worksheetId: w.worksheetId,
+                title: w.title,
+                fileUrl: w.fileUrl,
+              })),
+            };
+          })
         );
       } catch (err) {
         if (!cancelled) {
@@ -103,7 +121,7 @@ export default function CalendarPage() {
         {/* 월 라벨 */}
         <div className="relative inline-block" ref={anchorRef}>
           <button
-            className="inline-flex items-center gap-2 text-[18px] font-semibold text-slate-700"
+            className="inline-flex items-center gap-2 text-[24px] font-bold text-slate-700"
             onClick={() => setPickerOpen((v) => !v)}
           >
             <span>{String(viewYear).slice(2)}년 {viewMonth0 + 1}월</span>
@@ -146,7 +164,7 @@ export default function CalendarPage() {
 
           {/* 우측 패널 */}
           <div className="w-[420px]">
-            <TaskPanel selectedDate={selected} tasks={tasks} onSelectDate={onPickDate} />
+            <TaskPanel selectedDate={selected} tasks={tasks} onSelectDate={onPickDate} dailyStats={dailyStats} />
           </div>
         </div>
       </main>

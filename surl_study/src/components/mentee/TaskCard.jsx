@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-export default function TaskCard({ task }) {
+export default function TaskCard({ task, hideWorksheets = false }) {
   const navigate = useNavigate();
 
   const feedbackDone = task.feedbackDone ?? false;
@@ -27,7 +27,7 @@ export default function TaskCard({ task }) {
             {task.title}
           </div>
 
-          {task.worksheets && task.worksheets.length > 0 && (
+          {!hideWorksheets && task.worksheets && task.worksheets.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {task.worksheets.map((w) => (
                 <a
