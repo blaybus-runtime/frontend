@@ -382,8 +382,6 @@ export default function MentorMenteeDetailPage() {
 
             {/* RIGHT */}
             <section className="space-y-6">
-              <MemoCard memos={memos} onAddMemo={addMemo} />
-
               <FeedbackListCard
                 count={pendingFeedback.length}
                 items={pendingFeedback}
