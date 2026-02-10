@@ -53,6 +53,7 @@ export default function MainPage() {
   const [dailyStats, setDailyStats] = useState([]);
   const [showAddTask, setShowAddTask] = useState(false);
   const [showStudyTime, setShowStudyTime] = useState(false);
+  const [studyTimeEditMode, setStudyTimeEditMode] = useState(false);
   const [plannerId, setPlannerId] = useState(null);
   const [timeRecords, setTimeRecords] = useState([]);
   const { token, user } = useAuth();
@@ -184,13 +185,13 @@ export default function MainPage() {
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button
-                    onClick={() => setShowStudyTime(true)}
+                    onClick={() => { setStudyTimeEditMode(false); setShowStudyTime(true); }}
                     className="flex-1 rounded-lg !bg-[#6D87ED] py-3 text-sm font-semibold text-white hover:!bg-[#5A74D6] transition-colors cursor-pointer"
                   >
                     공부 시간 기록
                   </button>
                   <button
-                    onClick={() => setShowStudyTime(true)}
+                    onClick={() => { setStudyTimeEditMode(true); setShowStudyTime(true); }}
                     className="flex items-center justify-center rounded-lg border border-gray-300 bg-gray px-3.5 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
                     title="수정"
                   >
@@ -213,6 +214,8 @@ export default function MainPage() {
       {showStudyTime && (
         <StudyTimeModal
           plannerId={plannerId}
+          timeRecords={timeRecords}
+          editMode={studyTimeEditMode}
           onClose={() => setShowStudyTime(false)}
           onRecorded={() => {
             fetchDailyTasks(selectedDate);

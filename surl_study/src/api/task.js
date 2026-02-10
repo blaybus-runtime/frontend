@@ -214,6 +214,17 @@ export function recordStudyTime(token, body) {
 }
 
 /**
+ * DELETE /api/v1/study/time-records/{recordId}
+ * 공부 시간 기록 삭제
+ */
+export function deleteTimeRecord(token, recordId) {
+  return apiClient(`/api/v1/study/time-records/${recordId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+/**
  * GET /api/v1/assignments/{assignmentId}/feedback
  * 특정 task의 멘토 피드백 조회
  */
@@ -344,6 +355,49 @@ export async function submitFiles(token, taskId, files) {
 
   const res = await fetch(`${API_BASE}/api/v1/mentee/study/tasks/${taskId}/submissions`, {
     method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    const err = new Error(json.message || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.data = json;
+    throw err;
+  }
+
+  return json;
+}
+
+/**
+ * PUT /api/v1/mentee/study/tasks/{taskId}/submissions
+ * 멘티 제출물 수정 (기존 파일 유지/삭제 + 새 파일 추가)
+ *
+ * form fields:
+ *   - keepFileIds: "30006,30007" (유지할 파일 ID 쉼표 구분)
+ *   - newFiles: 새로 추가할 파일들
+ * 응답: { assignmentId, menteeId, taskId, status, submittedAt, files: [...] }
+ */
+export async function updateSubmissionFiles(token, taskId, keepFileIds, newFiles) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+  const formData = new FormData();
+
+  if (keepFileIds && keepFileIds.length > 0) {
+    formData.append("keepFileIds", keepFileIds.join(","));
+  }
+
+  if (newFiles && newFiles.length > 0) {
+    newFiles.forEach((f) => formData.append("newFiles", f));
+  }
+
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/mentee/study/tasks/${taskId}/submissions`, {
+    method: "PUT",
     headers,
     body: formData,
   });

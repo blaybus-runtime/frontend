@@ -4,7 +4,7 @@ import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import MentorFeedback from "../../components/mentee/MentorFeedback";
 import { useAuth } from "../../context/AuthContext";
-import { downloadWorksheets, getTaskDetail, submitFiles } from "../../api/task";
+import { downloadWorksheets, getTaskDetail, submitFiles, updateSubmissionFiles } from "../../api/task";
 
 // 과목별 태그 색상 매핑
 const SUBJECT_COLORS = {
@@ -74,6 +74,21 @@ export default function TaskDetailPage() {
     } catch (err) {
       console.error("파일 제출 실패:", err);
       alert("파일 제출에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 제출물 수정 (기존 파일 유지/삭제 + 새 파일 추가)
+  const handleUpdateFiles = async (keepFileIds, newFiles) => {
+    if (uploading) return;
+    setUploading(true);
+    try {
+      await updateSubmissionFiles(token, taskId, keepFileIds, newFiles);
+      await fetchTaskDetail();
+    } catch (err) {
+      console.error("파일 수정 실패:", err);
+      alert("파일 수정에 실패했습니다.");
     } finally {
       setUploading(false);
     }
@@ -149,6 +164,7 @@ export default function TaskDetailPage() {
             worksheets={worksheets}
             submissions={submissions}
             onSubmitFiles={handleSubmitFiles}
+            onUpdateFiles={handleUpdateFiles}
             uploading={uploading}
           />
 
