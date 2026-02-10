@@ -24,13 +24,14 @@ export default function TaskDetailPage() {
   // API에서 가져온 상세 데이터
   const [worksheets, setWorksheets] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [taskInfo, setTaskInfo] = useState(null); // API에서 가져온 task 기본 정보
 
-  // 기본 정보 (navigation state에서)
-  const subject = taskFromState?.subject || "국어";
+  // 기본 정보 (API 응답 우선, navigation state fallback)
+  const subject = taskInfo?.subject || taskFromState?.subject || "";
   const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
-  const taskTitle = taskFromState?.taskTitle || "";
-  const goal = taskFromState?.goal || "";
-  const content = taskFromState?.title || "";
+  const taskTitle = taskInfo?.title || taskFromState?.taskTitle || "";
+  const goal = taskInfo?.goal || taskFromState?.goal || "";
+  const content = taskInfo?.content || taskFromState?.title || "";
 
   // Task 상세 조회 (학습지 + 제출물)
   const fetchTaskDetail = useCallback(async () => {
@@ -40,6 +41,7 @@ export default function TaskDetailPage() {
       const data = res.data || res;
       setWorksheets(data.worksheets || []);
       setSubmissions(data.submissions || []);
+      setTaskInfo(data);
     } catch (err) {
       console.error("할일 상세 조회 실패:", err);
     }
