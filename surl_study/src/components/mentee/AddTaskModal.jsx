@@ -374,26 +374,25 @@ export default function AddTaskModal({ onClose, onTaskAdded, fixedMenteeId }) {
                       </button>
 
                       {openDropdown === idx && (
-                        <div className="absolute right-0 top-full z-10 mt-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
-                          <div className="flex gap-1">
-                            {repeatDays.map((dayKey) => {
-                              const label = WEEKDAYS.find((w) => w.key === dayKey)?.label;
-                              return (
-                                <button
-                                  key={dayKey}
-                                  type="button"
-                                  onClick={() => toggleFileDay(idx, dayKey)}
-                                  className={`h-8 w-8 rounded-md text-xs font-medium transition-all ${
-                                    item.days.includes(dayKey)
-                                      ? "!bg-[#6D87ED] text-white"
-                                      : "!bg-gray-100 text-gray-500 hover:!bg-gray-200"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              );
-                            })}
-                          </div>
+                        <div className="absolute right-0 top-full z-10 mt-1 min-w-[90px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                          {repeatDays.map((dayKey) => {
+                            const w = WEEKDAYS.find((w) => w.key === dayKey);
+                            const selected = item.days.includes(dayKey);
+                            return (
+                              <button
+                                key={dayKey}
+                                type="button"
+                                onClick={() => toggleFileDay(idx, dayKey)}
+                                className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors ${
+                                  selected
+                                    ? "text-[#6D87ED] font-semibold"
+                                    : "text-gray-600 hover:bg-gray-50"
+                                }`}
+                              >
+                                {w.label}요일
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
