@@ -36,19 +36,20 @@ export default function FeedbackDetailPage() {
   const { token, user } = useAuth();
   const taskFromState = location.state?.task;
 
-  // navigate state에서 task 정보 구성
-  const subject = taskFromState?.subject || "";
-  const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
-
-  const teacherName = taskFromState?.title || "";
-  const taskTitle = taskFromState?.goal ? `${taskFromState.desc || taskFromState.title} | ${taskFromState.goal}` : (taskFromState?.desc || "");
-
   const [showMenu, setShowMenu] = useState(false);
 
   // 학습지 + 제출물 상태
   const [worksheets, setWorksheets] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [downloading, setDownloading] = useState(false);
+  const [taskInfo, setTaskInfo] = useState(null); // API에서 가져온 task 기본 정보
+
+  // task 정보 구성 (API 응답 우선, navigation state fallback)
+  const subject = taskInfo?.subject || taskFromState?.subject || "";
+  const subjectColor = SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-700";
+
+  const teacherName = taskInfo?.title || taskFromState?.title || "";
+  const taskTitle = taskInfo?.goal || taskFromState?.goal || "";
 
   // Task 상세 조회 (학습지 + 제출물)
   const fetchTaskDetail = useCallback(async () => {
@@ -58,6 +59,7 @@ export default function FeedbackDetailPage() {
       const data = res.data || res;
       setWorksheets(data.worksheets || []);
       setSubmissions(data.submissions || []);
+      setTaskInfo(data);
     } catch (err) {
       console.error("할일 상세 조회 실패:", err);
     }
