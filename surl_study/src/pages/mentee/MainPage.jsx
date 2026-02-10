@@ -21,11 +21,6 @@ const SUBJECT_COLORS = {
 };
 const DEFAULT_TAG_COLOR = "bg-gray-100 text-gray-700";
 
-// 더미 데이터 (API 실패 시 폴백)
-const fallbackTasks = [
-  { id: 1, tag: "국어", tagColor: "bg-amber-100 text-amber-700", title: "강지연 국어", status: "피드백 완료", done: true },
-  { id: 2, tag: "영어", tagColor: "bg-rose-100 text-rose-700", title: "단어 암기", status: "피드백 대기", done: false },
-];
 
 // 서울대쌤 칼럼 (하드코딩)
 const COLUMNS = [
@@ -96,8 +91,8 @@ export default function MainPage() {
       }));
       setTasks(mapped);
     } catch (err) {
-      console.error("오늘 할 일 API 호출 실패, 더미 데이터 사용:", err);
-      setTasks(fallbackTasks);
+      console.error("오늘 할 일 API 호출 실패:", err);
+      setTasks([]);
     }
   };
 

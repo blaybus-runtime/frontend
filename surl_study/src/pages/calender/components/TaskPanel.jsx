@@ -26,9 +26,18 @@ export default function TaskPanel({ selectedDate, tasks, onSelectDate, dailyStat
       />
 
       <div className="mt-5 flex flex-col gap-4">
-        {tasks.map((t) => (
-          <TaskCard key={t.id} task={t} hideWorksheets />
-        ))}
+        {tasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200">
+              <span className="text-xl text-gray-400 font-bold">!</span>
+            </div>
+            <p className="mt-4 text-sm text-gray-400">플래너를 작성해 주세요!</p>
+          </div>
+        ) : (
+          tasks.map((t) => (
+            <TaskCard key={t.id} task={t} hideWorksheets />
+          ))
+        )}
       </div>
     </div>
   );
