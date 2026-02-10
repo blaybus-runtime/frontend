@@ -32,10 +32,15 @@ export default function MentorFeedback({ taskId }) {
       .then((json) => {
         const data = json.data ?? json;
         setFeedback({
-          mentorName: data.mentorName ?? data.writerName ?? "멘토",
-          mentorAvatar: data.mentorProfileUrl ?? data.writerProfileUrl ?? null,
+          mentorName: data.mentor?.mentorName ?? data.mentorName ?? data.writerName ?? "멘토",
+          mentorAvatar: data.mentor?.profileImage ?? data.mentorProfileUrl ?? data.writerProfileUrl ?? null,
           timeAgo: formatTimeAgo(data.createdAt),
           content: data.content ?? "",
+          files: (data.files ?? []).map((f) => ({
+            fileId: f.fileId,
+            fileName: f.fileName,
+            fileUrl: f.fileUrl,
+          })),
         });
       })
       .catch((err) => {
@@ -129,6 +134,43 @@ export default function MentorFeedback({ taskId }) {
           <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-gray-700">
             {feedback.content}
           </p>
+
+          {/* 첨부 파일 표시 */}
+          {feedback.files && feedback.files.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {feedback.files.map((f) => {
+                const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.fileName || "");
+                return (
+                  <div key={f.fileId}>
+                    {isImage && f.fileUrl && (
+                      <img
+                        src={f.fileUrl}
+                        alt={f.fileName}
+                        className="mb-2 max-w-full rounded-lg border border-gray-200"
+                      />
+                    )}
+                    <a
+                      href={f.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={f.fileName}
+                      className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+                    >
+                      <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">
+                        {isImage ? "IMG" : "FILE"}
+                      </span>
+                      <span className="truncate">{f.fileName}</span>
+                      <svg className="ml-auto h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 16 16" fill="none">
+                        <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        <path d="M4.66699 6.66699L8.00033 10.0003L11.3337 6.66699" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M8 10V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         <div className="mt-4 rounded-2xl bg-white p-6 shadow-sm">
