@@ -30,22 +30,23 @@ export default function WeeklyCalendar({ dailyStats = [], selectedDate, onSelect
   });
 
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className="grid grid-cols-7 gap-2 p-4">
       {weekDays.map((d) => (
         <div
           key={`${d.label}-${d.num}`}
           className="text-center cursor-pointer"
           onClick={() => onSelectDate?.(d.dateStr)}
         >
-          <div className="text-sm text-gray-400 font-medium">{d.label}</div>
+          {/* 요일 라벨 스타일 */}
+          <div className="text-sm text-gray-400 font-medium mb-1">{d.label}</div>
+
+          {/* 날짜 숫자 스타일 */}
           <div
-            className={`mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold transition-colors ${
-              d.isSelected
-                ? "ring-2 ring-[#6D87ED] text-[#6D87ED] bg-white"
-                : d.isToday
-                  ? "bg-[#6D87ED] text-white"
-                  : "text-gray-800 hover:bg-gray-100"
-            }`}
+              className={`inline-flex h-9 w-9 items-center justify-center text-sm font-bold transition-all ${
+                  d.isSelected
+                      ? "bg-[#6D87ED] text-white rounded-full shadow-sm" // 🔴 1. rounded-xl로 더 둥글게 수정
+                      : "text-gray-800 hover:bg-gray-100 rounded-xl"  // 🔴 2. 오늘 날짜(isToday) 특수 CSS 제거
+              }`}
           >
             {d.num}
           </div>

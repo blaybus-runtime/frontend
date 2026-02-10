@@ -55,3 +55,105 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* src/index.css 또는 별도의 커스텀 CSS 파일 */
+
+/* 1. 캘린더 전체 컨테이너 */
+body .react-datepicker {
+  border: none !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 20px !important;
+  background-color: #ffffff !important;
+  font-family: inherit !important;
+}
+
+/* 2. 헤더 영역: 상단 밀착 */
+body .react-datepicker__header {
+  background-color: #ffffff !important;
+  border-bottom: none !important;
+  border-top-left-radius: 20px !important;
+  border-top-right-radius: 20px !important;
+  padding: 0 !important;
+}
+
+/* 3. 드롭다운 배치: 상단 3px 마진 및 3px 간격 */
+body .react-datepicker__header__dropdown {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  margin-top: 3px !important;
+  margin-bottom: 12px !important;
+  flex-direction: row !important;
+}
+
+body .react-datepicker__year-dropdown-container { order: 1 !important; }
+body .react-datepicker__month-dropdown-container { order: 2 !important; }
+
+/* 4. 드롭다운 셀렉트 박스: 큼직한 직사각형 스타일 */
+body .react-datepicker__year-select,
+body .react-datepicker__month-select {
+  border: 1px solid #efefef !important;
+  /* 🔴 직사각형 느낌을 위해 곡률 감소 (8px -> 4px) */
+  border-radius: 4px !important;
+  padding: 4px 10px !important; /* 세로/가로 여백을 키워 크기 확대 */
+  background-color: #ffffff !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  outline: none;
+  /* 🔴 숫자 하나만큼 더 넓게 가로 너비 확장 (65px -> 85px) */
+  min-width: 85px !important;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* 5. 요일(일~토) 정렬 */
+body .react-datepicker__day-name {
+  color: #b1b1b1 !important;
+  width: 2.2rem !important;
+  margin: 0.1rem !important;
+  font-size: 0.75rem !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+/* 6. 날짜 숫자 및 선택 스타일 통합 */
+body .react-datepicker__day {
+  width: 2.2rem !important;
+  height: 2.2rem !important;
+  line-height: 2.2rem !important;
+  margin: 0.1rem !important;
+  display: inline-block !important;
+  text-align: center !important;
+  border-radius: 10px !important;
+  transition: all 0.2s;
+  border: none !important;
+  outline: none !important;
+}
+
+/* 🔴 선택된 날짜 및 오늘 날짜 스타일 통합 (파란 배경 + 흰색 글자) */
+body .react-datepicker__day--selected,
+body .react-datepicker__day--today.react-datepicker__day--selected {
+  background-color: #6D87ED !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+}
+
+/* 선택되지 않은 오늘 날짜의 특수 효과 제거 (일반 날짜처럼 처리) */
+body .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+  /* 만약 오늘 날짜가 선택되지 않았을 때도 파란색을 유지하고 싶다면 위 스타일이 적용됩니다. */
+}
+
+/* 7. 기타 UI 정리 */
+body .react-datepicker__current-month {
+  display: none !important;
+}
+
+body .react-datepicker__month {
+  margin: 0.4rem !important;
+}
+
+/* 화살표 위치 */
+body .react-datepicker__navigation {
+  top: 6px !important;
+}

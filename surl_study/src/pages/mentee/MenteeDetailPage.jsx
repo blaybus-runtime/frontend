@@ -322,16 +322,21 @@ export default function MentorMenteeDetailPage() {
             <section>
               <div>
                 <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-                  <div className="text-xl font-semibold px-1.5">오늘 할일</div>
+                  <div className="text-xl font-semibold px-1.5">오늘 할 일</div>
 
                   <div className="justify-self-center">
                     <DatePicker
-                      selected={parseISO(selectedDate)}
-                      onChange={(date) => setSelectedDate(format(date, "yyyy-MM-dd"))}
-                      locale={ko}
-                      dateFormat="yy년 M월 d일"
-                      customInput={<CustomDateInput />}
-                      popperPlacement="bottom"
+                        selected={parseISO(selectedDate)}
+                        onChange={(date) => setSelectedDate(format(date, "yyyy-MM-dd"))}
+                        locale={ko}
+                        dateFormat="yy년 M월 d일"
+                        customInput={<CustomDateInput />}
+                        popperPlacement="bottom"
+                        /* 🔴 시안과 동일한 배치를 위한 옵션 순서 */
+                        showYearDropdown    // 년도를 먼저 표시하도록 유도
+                        showMonthDropdown   // 그 다음에 월 표시
+                        dropdownMode="select"
+                        yearDropdownItemNumber={10}
                     />
                   </div>
                 </div>
