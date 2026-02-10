@@ -361,6 +361,41 @@ export async function submitFiles(token, taskId, files) {
 }
 
 /**
+ * GET /api/v1/assignments/{assignmentId}/feedback/files/{fileId}/download
+ * 피드백 첨부파일 개별 다운로드
+ */
+export async function downloadFeedbackFile(token, assignmentId, fileId, fileName) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/assignments/${assignmentId}/feedback/files/${fileId}/download`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+
+  const disposition = res.headers.get("Content-Disposition");
+  a.download = disposition?.match(/filename="?(.+?)"?$/)?.[1] || fileName || "download";
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/**
  * GET /api/v1/tasks/{taskId}/worksheets/download
  * 멘토가 등록한 학습지를 zip으로 일괄 다운로드
  */

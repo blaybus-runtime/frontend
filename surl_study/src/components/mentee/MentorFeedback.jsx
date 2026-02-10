@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { getFeedback, getComments, createComment } from "../../api/task";
+import { getFeedback, getComments, createComment, downloadFeedbackFile } from "../../api/task";
 
 // 시간 포맷 헬퍼: createdAt → "N분 전", "N시간 전" 등
 function formatTimeAgo(createdAt) {
@@ -149,12 +149,9 @@ export default function MentorFeedback({ taskId }) {
                         className="mb-2 max-w-full rounded-lg border border-gray-200"
                       />
                     )}
-                    <a
-                      href={f.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download={f.fileName}
-                      className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+                    <button
+                      onClick={() => downloadFeedbackFile(token, taskId, f.fileId, f.fileName)}
+                      className="flex w-full items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer"
                     >
                       <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">
                         {isImage ? "IMG" : "FILE"}
@@ -165,7 +162,7 @@ export default function MentorFeedback({ taskId }) {
                         <path d="M4.66699 6.66699L8.00033 10.0003L11.3337 6.66699" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M8 10V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
-                    </a>
+                    </button>
                   </div>
                 );
               })}

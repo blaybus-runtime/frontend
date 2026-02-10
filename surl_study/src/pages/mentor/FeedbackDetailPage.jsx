@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/common/Header";
 import LearningContent from "../../components/mentee/LearningContent";
 import { useAuth } from "../../context/AuthContext";
-import { getFeedback, createFeedback, updateFeedback, deleteFeedback, getComments, createComment, getTaskDetail, downloadWorksheets } from "../../api/task";
+import { getFeedback, createFeedback, updateFeedback, deleteFeedback, getComments, createComment, getTaskDetail, downloadWorksheets, downloadFeedbackFile } from "../../api/task";
 
 // 과목별 태그 색상 매핑
 const SUBJECT_COLORS = {
@@ -402,13 +402,10 @@ export default function FeedbackDetailPage() {
                       {feedback.files.map((f) => {
                         const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.fileName || "");
                         return (
-                          <a
+                          <button
                             key={f.fileId}
-                            href={f.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download={f.fileName}
-                            className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+                            onClick={() => downloadFeedbackFile(token, feedbackId, f.fileId, f.fileName)}
+                            className="flex w-full items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer"
                           >
                             <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">
                               {isImage ? "IMG" : "FILE"}
@@ -419,7 +416,7 @@ export default function FeedbackDetailPage() {
                               <path d="M4.66699 6.66699L8.00033 10.0003L11.3337 6.66699" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               <path d="M8 10V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
-                          </a>
+                          </button>
                         );
                       })}
                     </div>
