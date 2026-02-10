@@ -192,10 +192,10 @@ export default function MainPage() {
                   </button>
                   <button
                     onClick={() => { setStudyTimeEditMode(true); setShowStudyTime(true); }}
-                    className="flex items-center justify-center rounded-lg border border-gray-300 bg-gray px-3.5 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors cursor-pointer"
                     title="수정"
                   >
-                    <img src="/Record_modify.png" alt="수정하기" className="w-7 h-7" />
+                    <img src="/Record_modify.png" alt="수정하기" className="h-full w-full object-contain" />
                   </button>
                 </div>
               </div>
